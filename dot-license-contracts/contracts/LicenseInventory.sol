@@ -2,12 +2,13 @@ pragma solidity ^0.4.19;
 
 import "./LicenseBase.sol";
 import "./math/SafeMath.sol";
+import "./ownership/Ownable.sol";
 
 /**
  * @title LicenseInventory
  * @notice LicenseInventory controls the products and inventory for those products
  **/
-contract LicenseInventory is LicenseBase {
+contract LicenseInventory is Ownable, LicenseBase {
   using SafeMath for uint256;
 
   event ProductCreated(
@@ -119,20 +120,17 @@ contract LicenseInventory is LicenseBase {
     products[_productId].available = newInventoryLevel;
   }
 
-  function _clearInventory(uint256 _productId) internal
-  {
+  function _clearInventory(uint256 _productId) internal {
     require(_productExists(_productId));
     products[_productId].available = 0;
   }
 
-  function _setPrice(uint256 _productId, uint256 _price) internal
-  {
+  function _setPrice(uint256 _productId, uint256 _price) internal {
     require(_productExists(_productId));
     products[_productId].price = _price;
   }
 
-  function _setRenewable(uint256 _productId, bool _isRenewable) internal
-  {
+  function _setRenewable(uint256 _productId, bool _isRenewable) internal {
     require(_productExists(_productId));
     products[_productId].renewable = _isRenewable;
   }
@@ -175,7 +173,7 @@ contract LicenseInventory is LicenseBase {
     uint256 _supply,
     uint256 _interval)
     external
-    onlyCEOOrCOO
+    onlyOwner
   {
     _createProduct(
       _productId,
@@ -194,7 +192,7 @@ contract LicenseInventory is LicenseBase {
     uint256 _productId,
     uint256 _inventoryAdjustment)
     external
-    onlyCLevel
+    onlyOwner
   {
     _incrementInventory(_productId, _inventoryAdjustment);
     ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
@@ -209,7 +207,7 @@ contract LicenseInventory is LicenseBase {
     uint256 _productId,
     uint256 _inventoryAdjustment)
     external
-    onlyCLevel
+    onlyOwner
   {
     _decrementInventory(_productId, _inventoryAdjustment);
     ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
@@ -219,7 +217,7 @@ contract LicenseInventory is LicenseBase {
   * @notice clearInventory clears the inventory of a product.
   * @dev decrementInventory verifies inventory levels, whereas this method
   * simply sets the inventory to zero. This is useful, for example, if an
-  * executive wants to take a product off the market quickly. There could be a
+  * owner wants to take a product off the market quickly. There could be a
   * race condition with decrementInventory where a product is sold, which could
   * cause the admins decrement to fail (because it may try to decrement more
   * than available).
@@ -228,7 +226,7 @@ contract LicenseInventory is LicenseBase {
   */
   function clearInventory(uint256 _productId)
     external
-    onlyCLevel
+    onlyOwner
   {
     _clearInventory(_productId);
     ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
@@ -241,7 +239,7 @@ contract LicenseInventory is LicenseBase {
   */
   function setPrice(uint256 _productId, uint256 _price)
     external
-    onlyCLevel
+    onlyOwner
   {
     _setPrice(_productId, _price);
     ProductPriceChanged(_productId, _price);
@@ -254,7 +252,7 @@ contract LicenseInventory is LicenseBase {
   */
   function setRenewable(uint256 _productId, bool _newRenewable)
     external
-    onlyCLevel
+    onlyOwner
   {
     _setRenewable(_productId, _newRenewable);
     ProductRenewableChanged(_productId, _newRenewable);
@@ -318,7 +316,7 @@ contract LicenseInventory is LicenseBase {
   function productInfo(uint256 _productId)
     public
     view
-    returns (uint256, uint256, uint256, uint256, bool)
+    returns (uint256 price, uint256 inventory, uint256 totalSupply, uint256 interval, bool renewable)
   {
     return (
       priceOf(_productId),

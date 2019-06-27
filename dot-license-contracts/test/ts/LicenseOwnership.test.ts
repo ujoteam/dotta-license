@@ -26,9 +26,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
   const user1 = accounts[1];
   const user2 = accounts[2];
   const user3 = accounts[3];
-  const ceo = accounts[4];
-  const cfo = accounts[5];
-  const coo = accounts[6];
+  const owner = accounts[4];
   const user4 = accounts[7];
   const user5 = accounts[8];
   const operator = accounts[9];
@@ -56,9 +54,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
   beforeEach(async () => {
     token = await LicenseCore.new({ from: creator });
-    await token.setCEO(ceo, { from: creator });
-    await token.setCFO(cfo, { from: ceo });
-    await token.setCOO(coo, { from: ceo });
+    await token.transferOwnership(owner, { from: creator });
 
     await token.createProduct(
       firstProduct.id,
@@ -66,7 +62,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
       firstProduct.initialInventory,
       firstProduct.supply,
       firstProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
 
     await token.createProduct(
@@ -75,12 +71,10 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
       secondProduct.initialInventory,
       secondProduct.supply,
       secondProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
 
-    await token.setTokenMetadataBaseURI('http://localhost/', { from: ceo });
-
-    await token.unpause({ from: ceo });
+    await token.setTokenMetadataBaseURI('http://localhost/', { from: owner });
 
     await token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
       from: user1,
@@ -88,12 +82,12 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
     });
 
     await token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
-      from: coo,
+      from: user1,
       value: firstProduct.price
     });
 
     await token.purchase(secondProduct.id, 1, user2, ZERO_ADDRESS, {
-      from: coo,
+      from: user1,
       value: secondProduct.price
     });
   });
@@ -101,14 +95,14 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
   describe('name', async () => {
     it('it has a name', async () => {
       const name = await token.name();
-      name.should.be.eq('Dottabot');
+      name.should.be.eq('Ujo');
     });
   });
 
   describe('symbol', async () => {
     it('it has a symbol', async () => {
       const symbol = await token.symbol();
-      symbol.should.be.eq('DOTTA');
+      symbol.should.be.eq('UJO');
     });
   });
 
@@ -314,7 +308,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
           describe('when it is paused', async () => {
             beforeEach(async () => {
-              await token.pause({ from: ceo });
+              await token.pause({ from: owner });
             });
             it('reverts', async () => {
               await assertRevert(token.transfer(to, tokenId, { from: sender }));
@@ -828,7 +822,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
         });
         describe('and the contract is paused', async () => {
           beforeEach(async () => {
-            await token.pause({ from: ceo });
+            await token.pause({ from: owner });
           });
           it('should not work', async () => {
             await assertRevert(

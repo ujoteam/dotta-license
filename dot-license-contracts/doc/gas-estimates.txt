@@ -35,9 +35,9 @@ Gas estimation:
 construction:
    20925 + 582200 = 603125
 external:
-   ceoAddress():	456
-   cfoAddress():	434
-   cooAddress():	654
+   ownerAddress():	456
+   ownerAddress():	434
+   ownerAddress():	654
    pause():	22558
    paused():	638
    setCEO(address):	20823
@@ -53,9 +53,9 @@ Gas estimation:
 construction:
    21091 + 747400 = 768491
 external:
-   ceoAddress():	456
-   cfoAddress():	434
-   cooAddress():	742
+   ownerAddress():	456
+   ownerAddress():	434
+   ownerAddress():	742
    licenseAffiliate(uint256):	828
    licenseAttributes(uint256):	1110
    licenseExpirationTime(uint256):	1066
@@ -88,10 +88,10 @@ external:
    approveAll(address):	22924
    availableInventoryOf(uint256):	1419
    balanceOf(address):	1351
-   ceoAddress():	588
-   cfoAddress():	456
+   ownerAddress():	588
+   ownerAddress():	456
    clearInventory(uint256):	8762
-   cooAddress():	1534
+   ownerAddress():	1534
    costForProductCycles(uint256,uint256):	infinite
    createProduct(uint256,uint256,uint256,uint256,uint256):	infinite
    createPromotionalPurchase(uint256,uint256,address,uint256):	infinite
@@ -160,10 +160,10 @@ construction:
 external:
    allProductIds(uint256):	1360
    availableInventoryOf(uint256):	979
-   ceoAddress():	478
-   cfoAddress():	434
+   ownerAddress():	478
+   ownerAddress():	434
    clearInventory(uint256):	8454
-   cooAddress():	984
+   ownerAddress():	984
    costForProductCycles(uint256,uint256):	infinite
    createProduct(uint256,uint256,uint256,uint256,uint256):	infinite
    decrementInventory(uint256,uint256):	infinite
@@ -218,10 +218,10 @@ external:
    approveAll(address):	22924
    availableInventoryOf(uint256):	1331
    balanceOf(address):	1307
-   ceoAddress():	588
-   cfoAddress():	456
+   ownerAddress():	588
+   ownerAddress():	456
    clearInventory(uint256):	8740
-   cooAddress():	1424
+   ownerAddress():	1424
    costForProductCycles(uint256,uint256):	infinite
    createProduct(uint256,uint256,uint256,uint256,uint256):	infinite
    decrementInventory(uint256,uint256):	infinite
@@ -296,10 +296,10 @@ external:
    approveAll(address):	22924
    availableInventoryOf(uint256):	1375
    balanceOf(address):	1329
-   ceoAddress():	588
-   cfoAddress():	456
+   ownerAddress():	588
+   ownerAddress():	456
    clearInventory(uint256):	8762
-   cooAddress():	1490
+   ownerAddress():	1490
    costForProductCycles(uint256,uint256):	infinite
    createProduct(uint256,uint256,uint256,uint256,uint256):	infinite
    createPromotionalPurchase(uint256,uint256,address,uint256):	infinite

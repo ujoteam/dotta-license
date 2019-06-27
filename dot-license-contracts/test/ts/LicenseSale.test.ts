@@ -32,9 +32,7 @@ contract('LicenseSale', (accounts: string[]) => {
   const user1 = accounts[1];
   const user2 = accounts[2];
   const user3 = accounts[3];
-  const ceo = accounts[4];
-  const cfo = accounts[5];
-  const coo = accounts[6];
+  const owner = accounts[4];
   let p1Created: any;
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -64,9 +62,7 @@ contract('LicenseSale', (accounts: string[]) => {
 
   beforeEach(async () => {
     token = await LicenseCore.new({ from: creator });
-    await token.setCEO(ceo, { from: creator });
-    await token.setCFO(cfo, { from: ceo });
-    await token.setCOO(coo, { from: ceo });
+    await token.transferOwnership(owner, { from: creator });
 
     p1Created = await token.createProduct(
       firstProduct.id,
@@ -74,7 +70,7 @@ contract('LicenseSale', (accounts: string[]) => {
       firstProduct.initialInventory,
       firstProduct.supply,
       firstProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
 
     await token.createProduct(
@@ -83,7 +79,7 @@ contract('LicenseSale', (accounts: string[]) => {
       secondProduct.initialInventory,
       secondProduct.supply,
       secondProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
 
     await token.createProduct(
@@ -92,16 +88,14 @@ contract('LicenseSale', (accounts: string[]) => {
       thirdProduct.initialInventory,
       thirdProduct.supply,
       thirdProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
-
-    await token.unpause({ from: ceo });
   });
 
   describe('when purchasing', async () => {
     describe('it should fail because it', async () => {
       it('should not sell a product that has no inventory', async () => {
-        await token.clearInventory(firstProduct.id, { from: ceo });
+        await token.clearInventory(firstProduct.id, { from: owner });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
@@ -152,7 +146,7 @@ contract('LicenseSale', (accounts: string[]) => {
         );
       });
       it('should not sell if the contract is paused', async () => {
-        await token.pause({ from: ceo });
+        await token.pause({ from: owner });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
@@ -334,18 +328,18 @@ contract('LicenseSale', (accounts: string[]) => {
         );
       });
     });
-    describe('if the COO is creating it', async () => {
+    describe('if the owner is creating it', async () => {
       it('should not allow violation of the total inventory', async () => {
         await token.purchase(firstProduct.id, 1, user3, ZERO_ADDRESS, {
           from: user3,
           value: firstProduct.price
         });
         await token.createPromotionalPurchase(firstProduct.id, 1, user3, 0, {
-          from: coo
+          from: owner
         });
         await assertRevert(
           token.createPromotionalPurchase(firstProduct.id, 1, user3, 0, {
-            from: coo
+            from: owner
           })
         );
       });
@@ -355,11 +349,11 @@ contract('LicenseSale', (accounts: string[]) => {
           value: firstProduct.price
         });
         await token.createPromotionalPurchase(firstProduct.id, 1, user3, 0, {
-          from: coo
+          from: owner
         });
         await assertRevert(
           token.incrementInventory(firstProduct.id, 1, {
-            from: coo
+            from: owner
           })
         );
       });
@@ -368,7 +362,7 @@ contract('LicenseSale', (accounts: string[]) => {
           firstProduct.id
         )).should.be.bignumber.equal(2);
         await token.createPromotionalPurchase(firstProduct.id, 1, user3, 0, {
-          from: coo
+          from: owner
         });
         (await token.availableInventoryOf(
           firstProduct.id
@@ -377,7 +371,7 @@ contract('LicenseSale', (accounts: string[]) => {
       it('should count the amount sold', async () => {
         (await token.totalSold(firstProduct.id)).should.be.bignumber.equal(0);
         await token.createPromotionalPurchase(firstProduct.id, 1, user3, 0, {
-          from: coo
+          from: owner
         });
         (await token.totalSold(firstProduct.id)).should.be.bignumber.equal(1);
       });
@@ -440,7 +434,7 @@ contract('LicenseSale', (accounts: string[]) => {
         beforeEach(async () => {
           let isRenewable = await token.renewableOf(secondProduct.id);
           isRenewable.should.be.true();
-          await token.setRenewable(secondProduct.id, false, { from: ceo });
+          await token.setRenewable(secondProduct.id, false, { from: owner });
           isRenewable = await token.renewableOf(secondProduct.id);
           isRenewable.should.be.false();
         });
@@ -469,7 +463,7 @@ contract('LicenseSale', (accounts: string[]) => {
       });
       describe('and the contract is paused it', async () => {
         beforeEach(async () => {
-          await token.pause({ from: ceo });
+          await token.pause({ from: owner });
         });
         it('should not work', async () => {
           await assertRevert(
@@ -497,7 +491,7 @@ contract('LicenseSale', (accounts: string[]) => {
           await token.renew(tokenId, 2, {
             value: secondProduct.price * 2
           });
-          const expectedExpirationTime = new BigNumber(now).add(
+          const expectedExpirationTime = new BigNumber(now).plus(
             secondProduct.interval * 2
           );
           const actualExpirationTime = await token.licenseExpirationTime(
@@ -565,7 +559,7 @@ contract('LicenseSale', (accounts: string[]) => {
         const issuedEvent = eventByName(logs, 'LicenseIssued');
         const tokenId = issuedEvent.args.licenseId;
         await assertRevert(
-          token.createPromotionalRenewal(tokenId, 1, { from: ceo })
+          token.createPromotionalRenewal(tokenId, 1, { from: owner })
         );
       });
       describe('and the product is a subscription product', async () => {
@@ -588,24 +582,24 @@ contract('LicenseSale', (accounts: string[]) => {
           beforeEach(async () => {
             let isRenewable = await token.renewableOf(secondProduct.id);
             isRenewable.should.be.true();
-            await token.setRenewable(secondProduct.id, false, { from: ceo });
+            await token.setRenewable(secondProduct.id, false, { from: owner });
             isRenewable = await token.renewableOf(secondProduct.id);
             isRenewable.should.be.false();
           });
 
           it('should not allow renewing a non-renewable product', async () => {
             await assertRevert(
-              token.createPromotionalRenewal(tokenId, 1, { from: ceo })
+              token.createPromotionalRenewal(tokenId, 1, { from: owner })
             );
           });
         });
         describe('and the contract is paused', async () => {
           beforeEach(async () => {
-            await token.pause({ from: ceo });
+            await token.pause({ from: owner });
           });
           it('should not work', async () => {
             await assertRevert(
-              token.createPromotionalRenewal(tokenId, 1, { from: ceo })
+              token.createPromotionalRenewal(tokenId, 1, { from: owner })
             );
           });
         });
@@ -614,7 +608,7 @@ contract('LicenseSale', (accounts: string[]) => {
             tokenId
           );
           originalExpirationTime.should.be.bignumber.greaterThan(0);
-          token.createPromotionalRenewal(tokenId, 1, { from: ceo });
+          token.createPromotionalRenewal(tokenId, 1, { from: owner });
 
           let expectedTime = originalExpirationTime.add(secondProduct.interval);
           let actualTime = await token.licenseExpirationTime(tokenId);

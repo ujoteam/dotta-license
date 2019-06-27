@@ -1,9 +1,11 @@
 pragma solidity ^0.4.19;
 
+import "./ownership/Ownable.sol";
+
 import "./LicenseOwnership.sol";
 import "./Affiliate/AffiliateProgram.sol";
 
-contract LicenseSale is LicenseOwnership {
+contract LicenseSale is Ownable, LicenseOwnership {
   AffiliateProgram public affiliateProgram;
 
   /**
@@ -43,7 +45,7 @@ contract LicenseSale is LicenseOwnership {
     returns (uint)
   {
     // You cannot create a subscription license with zero cycles
-    if(isSubscriptionProduct(_productId)) {
+    if (isSubscriptionProduct(_productId)) {
       require(_numCycles != 0);
     }
 
@@ -123,14 +125,14 @@ contract LicenseSale is LicenseOwnership {
       !affiliateProgram.paused();
   }
 
-  /** executives **/
-  function setAffiliateProgramAddress(address _address) external onlyCEO {
+  /** owner **/
+  function setAffiliateProgramAddress(address _address) external onlyOwner {
     AffiliateProgram candidateContract = AffiliateProgram(_address);
     require(candidateContract.isAffiliateProgram());
     affiliateProgram = candidateContract;
   }
 
-  function setRenewalsCreditAffiliatesFor(uint256 _newTime) external onlyCEO {
+  function setRenewalsCreditAffiliatesFor(uint256 _newTime) external onlyOwner {
     renewalsCreditAffiliatesFor = _newTime;
   }
 
@@ -141,7 +143,7 @@ contract LicenseSale is LicenseOwnership {
     uint256 _attributes
     )
     external
-    onlyCEOOrCOO
+    onlyOwner
     whenNotPaused
     returns (uint256)
   {
@@ -158,7 +160,7 @@ contract LicenseSale is LicenseOwnership {
     uint256 _numCycles
     )
     external
-    onlyCEOOrCOO
+    onlyOwner
     whenNotPaused
   {
     uint256 productId = licenseProductId(_tokenId);
@@ -168,7 +170,6 @@ contract LicenseSale is LicenseOwnership {
   }
 
   /** anyone **/
-
   /**
   * @notice Makes a purchase of a product.
   * @dev Requires that the value sent is exactly the price of the product

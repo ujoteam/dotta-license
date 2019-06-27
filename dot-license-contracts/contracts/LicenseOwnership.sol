@@ -5,11 +5,12 @@ import "./interfaces/ERC721.sol";
 import "./interfaces/ERC721Metadata.sol";
 import "./interfaces/ERC721Enumerable.sol";
 import "./interfaces/ERC165.sol";
-import "./strings/Strings.sol";
-
 import "./interfaces/ERC721TokenReceiver.sol";
+import "./strings/Strings.sol";
+import "./ownership/Ownable.sol";
 
-contract LicenseOwnership is LicenseInventory, ERC721, ERC165, ERC721Metadata, ERC721Enumerable {
+
+contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Metadata, ERC721Enumerable {
   using SafeMath for uint256;
 
   // Total amount of tokens
@@ -32,9 +33,9 @@ contract LicenseOwnership is LicenseInventory, ERC721, ERC165, ERC721Metadata, E
 
   /*** Constants ***/
   // Configure these for your own deployment
-  string public constant NAME = "Dottabot";
-  string public constant SYMBOL = "DOTTA";
-  string public tokenMetadataBaseURI = "https://api.dottabot.com/";
+  string public constant NAME = "Ujo";
+  string public constant SYMBOL = "UJO";
+  string public tokenMetadataBaseURI = "http://localhost";
 
   /**
    * @notice token's name
@@ -65,7 +66,7 @@ contract LicenseOwnership is LicenseInventory, ERC721, ERC165, ERC721Metadata, E
   }
 
   function supportsInterface(
-    bytes4 interfaceID) // solium-disable-line dotta/underscore-function-arguments
+    bytes4 interfaceID) // solium-disable-line ujo/underscore-function-arguments
     external view returns (bool)
   {
     return
@@ -75,7 +76,7 @@ contract LicenseOwnership is LicenseInventory, ERC721, ERC165, ERC721Metadata, E
       interfaceID == 0x780e9d63; // ERC721Enumerable
   }
 
-  function setTokenMetadataBaseURI(string _newBaseURI) external onlyCEOOrCOO {
+  function setTokenMetadataBaseURI(string _newBaseURI) external onlyOwner {
     tokenMetadataBaseURI = _newBaseURI;
   }
 

@@ -22,9 +22,7 @@ contract('LicenseInventory', (accounts: string[]) => {
   const user1 = accounts[1];
   const user2 = accounts[2];
   const user3 = accounts[3];
-  const ceo = accounts[4];
-  const cfo = accounts[5];
-  const coo = accounts[6];
+  const owner = accounts[4];
   let p1Created: any;
 
   const firstProduct = {
@@ -53,9 +51,7 @@ contract('LicenseInventory', (accounts: string[]) => {
 
   beforeEach(async () => {
     token = await LicenseCore.new({ from: creator });
-    await token.setCEO(ceo, { from: creator });
-    await token.setCFO(cfo, { from: ceo });
-    await token.setCOO(coo, { from: ceo });
+    await token.transferOwnership(owner, { from: creator });
 
     p1Created = await token.createProduct(
       firstProduct.id,
@@ -63,7 +59,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       firstProduct.initialInventory,
       firstProduct.supply,
       firstProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
 
     await token.createProduct(
@@ -72,7 +68,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       secondProduct.initialInventory,
       secondProduct.supply,
       secondProduct.interval,
-      { from: ceo }
+      { from: owner }
     );
   });
 
@@ -129,7 +125,7 @@ contract('LicenseInventory', (accounts: string[]) => {
           firstProduct.initialInventory,
           firstProduct.supply,
           firstProduct.interval,
-          { from: ceo }
+          { from: owner }
         )
       );
     });
@@ -141,7 +137,7 @@ contract('LicenseInventory', (accounts: string[]) => {
           thirdProduct.supply + 1,
           thirdProduct.supply,
           thirdProduct.interval,
-          { from: ceo }
+          { from: owner }
         )
       );
     });
@@ -158,18 +154,6 @@ contract('LicenseInventory', (accounts: string[]) => {
           )
         );
       });
-      it('should not allow the CFO to create a product', async () => {
-        await assertRevert(
-          token.createProduct(
-            thirdProduct.id,
-            thirdProduct.price,
-            thirdProduct.initialInventory,
-            thirdProduct.supply,
-            thirdProduct.interval,
-            { from: cfo }
-          )
-        );
-      });
     });
   });
   describe('when changing inventories', async () => {
@@ -177,7 +161,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       (await token.availableInventoryOf(
         secondProduct.id
       )).should.be.bignumber.equal(3);
-      await token.incrementInventory(secondProduct.id, 2, { from: ceo });
+      await token.incrementInventory(secondProduct.id, 2, { from: owner });
       (await token.availableInventoryOf(
         secondProduct.id
       )).should.be.bignumber.equal(5);
@@ -186,7 +170,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       (await token.availableInventoryOf(
         secondProduct.id
       )).should.be.bignumber.equal(3);
-      await token.decrementInventory(secondProduct.id, 3, { from: ceo });
+      await token.decrementInventory(secondProduct.id, 3, { from: owner });
       (await token.availableInventoryOf(
         secondProduct.id
       )).should.be.bignumber.equal(0);
@@ -195,13 +179,13 @@ contract('LicenseInventory', (accounts: string[]) => {
     describe('if the product does not exist', async () => {
       it('should not increment the inventory', async () => {
         await assertRevert(
-          token.incrementInventory(1298120398, 2, { from: ceo })
+          token.incrementInventory(1298120398, 2, { from: owner })
         );
       });
 
       it('should not decrement the inventory', async () => {
         await assertRevert(
-          token.decrementInventory(1298120398, 2, { from: ceo })
+          token.decrementInventory(1298120398, 2, { from: owner })
         );
       });
     });
@@ -211,7 +195,7 @@ contract('LicenseInventory', (accounts: string[]) => {
         token.decrementInventory(
           secondProduct.id,
           secondProduct.initialInventory + 1,
-          { from: ceo }
+          { from: owner }
         )
       );
     });
@@ -219,19 +203,19 @@ contract('LicenseInventory', (accounts: string[]) => {
       (await token.availableInventoryOf(
         secondProduct.id
       )).should.be.bignumber.equal(3);
-      await token.clearInventory(secondProduct.id, { from: ceo });
+      await token.clearInventory(secondProduct.id, { from: owner });
       (await token.availableInventoryOf(
         secondProduct.id
       )).should.be.bignumber.equal(0);
     });
     it('should not allow setting the inventory greater than the total supply', async () => {
       await assertRevert(
-        token.incrementInventory(secondProduct.id, 3, { from: ceo })
+        token.incrementInventory(secondProduct.id, 3, { from: owner })
       );
     });
     it('should emit a ProductInventoryAdjusted event', async () => {
       const { logs } = await token.incrementInventory(secondProduct.id, 2, {
-        from: ceo
+        from: owner
       });
       logs.length.should.be.equal(1);
       logs[0].event.should.be.eq('ProductInventoryAdjusted');
@@ -253,7 +237,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       (await token.priceOf(secondProduct.id)).should.be.bignumber.equal(
         secondProduct.price
       );
-      token.setPrice(secondProduct.id, 1234567, { from: ceo });
+      token.setPrice(secondProduct.id, 1234567, { from: owner });
       (await token.priceOf(secondProduct.id)).should.be.bignumber.equal(
         1234567
       );
@@ -263,7 +247,7 @@ contract('LicenseInventory', (accounts: string[]) => {
     });
     it('should emit a ProductPriceChanged event', async () => {
       const { logs } = await token.setPrice(secondProduct.id, 1234567, {
-        from: ceo
+        from: owner
       });
       logs.length.should.be.equal(1);
       logs[0].event.should.be.eq('ProductPriceChanged');
@@ -276,14 +260,14 @@ contract('LicenseInventory', (accounts: string[]) => {
     describe('and an executive is changing renewable', async () => {
       it('should be allowed', async () => {
         (await token.renewableOf(secondProduct.id)).should.be.true();
-        await token.setRenewable(secondProduct.id, false, { from: ceo });
+        await token.setRenewable(secondProduct.id, false, { from: owner });
         (await token.renewableOf(secondProduct.id)).should.be.false();
       });
       it('should emit a ProductRenewableChanged event', async () => {
         (await token.renewableOf(secondProduct.id)).should.be.true();
 
         const { logs } = await token.setRenewable(secondProduct.id, false, {
-          from: ceo
+          from: owner
         });
         logs.length.should.be.equal(1);
         logs[0].event.should.be.eq('ProductRenewableChanged');

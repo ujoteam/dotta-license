@@ -73,9 +73,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
 
   beforeEach(async () => {
     token = await LicenseCore.new({ from: creator });
-    await token.setCEO(creator, { from: creator });
-    await token.setCFO(creator, { from: creator });
-    await token.setCOO(creator, { from: creator });
+    await token.transferOwnership(creator, { from: creator });
 
     await token.createProduct(
       firstProduct.id,
@@ -94,8 +92,6 @@ contract('AffiliateProgram', (accounts: string[]) => {
       secondProduct.interval,
       { from: creator }
     );
-
-    await token.unpause({ from: creator });
 
     affiliate = await AffiliateProgram.new(token.address, { from: creator });
     await token.setAffiliateProgramAddress(affiliate.address, {
@@ -279,19 +275,19 @@ contract('AffiliateProgram', (accounts: string[]) => {
       priceTests.forEach(test => {
         it(`should calculate the correct cut for price ${
           test.price
-        } at rate ${test.rate / 100}%`, async () => {
-          await affiliate.whitelist(affiliate1, test.rate, { from: creator });
-          const givenCut = await affiliate.cutFor(
-            affiliate1,
-            0,
-            0,
-            test.price,
-            {
-              from: creator
-            }
-          );
-          givenCut.should.be.bignumber.equal(new BigNumber(test.actual));
-        });
+          } at rate ${test.rate / 100}%`, async () => {
+            await affiliate.whitelist(affiliate1, test.rate, { from: creator });
+            const givenCut = await affiliate.cutFor(
+              affiliate1,
+              0,
+              0,
+              test.price,
+              {
+                from: creator
+              }
+            );
+            givenCut.should.be.bignumber.equal(new BigNumber(test.actual));
+          });
       });
     });
 
@@ -562,8 +558,8 @@ contract('AffiliateProgram', (accounts: string[]) => {
     });
   });
 
-  const productsOwnedBy = async (ownerAddress: string) => {
-    const tokenIds = await token.tokensOf(ownerAddress);
+  const productsOwnedBy = async (owner: string) => {
+    const tokenIds = await token.tokensOf(owner);
     let tokenProductIds = [];
     for (let i = 0; i < tokenIds.length; i++) {
       tokenProductIds.push(await token.licenseProductId(tokenIds[i]));
@@ -571,14 +567,14 @@ contract('AffiliateProgram', (accounts: string[]) => {
     return tokenProductIds;
   };
 
-  const assertOwns = async (ownerAddress: string, productId: number) => {
-    const products = await productsOwnedBy(ownerAddress);
+  const assertOwns = async (owner: string, productId: number) => {
+    const products = await productsOwnedBy(owner);
     const matchingId = find(products, id => id.equals(productId));
     (matchingId || false).should.be.bignumber.equal(productId);
   };
 
-  const assertDoesNotOwn = async (ownerAddress: string, productId: number) => {
-    const products = await productsOwnedBy(ownerAddress);
+  const assertDoesNotOwn = async (owner: string, productId: number) => {
+    const products = await productsOwnedBy(owner);
     const matchingId = find(products, id => id.equals(productId));
     (matchingId || false).should.be.false();
   };

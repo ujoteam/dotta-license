@@ -69,3 +69,4 @@ transpiled
 build/
 
 drizzle-scaffold
+.DS_Store

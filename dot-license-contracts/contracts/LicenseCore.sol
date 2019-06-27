@@ -1,5 +1,7 @@
 pragma solidity ^0.4.19;
 
+import "./ownership/Ownable.sol";
+
 import "./LicenseSale.sol";
 
 /**
@@ -7,19 +9,17 @@ import "./LicenseSale.sol";
  * @notice LicenseCore is the entry point and it controls the ability to set a new
  * contract address, in the case where an upgrade is required
  */
-contract LicenseCore is LicenseSale {
+contract LicenseCore is Ownable, LicenseSale {
   address public newContractAddress;
 
   function LicenseCore() public {
-    paused = true;
+    paused = false;
 
-    ceoAddress = msg.sender;
-    cooAddress = msg.sender;
-    cfoAddress = msg.sender;
+    owner = msg.sender;
     withdrawalAddress = msg.sender;
   }
 
-  function setNewAddress(address _v2Address) external onlyCEO whenPaused {
+  function setNewAddress(address _v2Address) external onlyOwner whenPaused {
     newContractAddress = _v2Address;
     ContractUpgrade(_v2Address);
   }
@@ -28,7 +28,7 @@ contract LicenseCore is LicenseSale {
     assert(false);
   }
 
-  function unpause() public onlyCEO whenPaused {
+  function unpause() public onlyOwner whenPaused {
     require(newContractAddress == address(0));
     super.unpause();
   }
