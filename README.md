@@ -166,11 +166,7 @@ The smart contracts are split into modules.
 
 # Roles-based Permissions
 
-Issuance of new products and unsold inventory levels is centrally controlled. There are three roles:
-
-* CEO
-* CFO and
-* COO
+Issuance of new products and unsold inventory levels is centrally controlled by the owner.
 
 Some of the smart contract functions are open to anyone and some are restricted by role. The table below shows the permissions for each:
 
