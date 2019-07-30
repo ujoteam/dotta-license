@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./ERC165.sol";
 
@@ -32,7 +32,7 @@ contract ERC721 is ERC165 {
      * - If the caller is not `from`, it must be have been allowed to move this
      * NFT by either {approve} or {setApprovalForAll}.
      */
-    function safeTransferFrom(address from, address to, uint256 tokenId) public;
+    function safeTransferFrom(address from, address to, uint256 tokenId) external;
     /**
      * @dev Transfers a specific NFT (`tokenId`) from one account (`from`) to
      * another (`to`).
@@ -42,10 +42,10 @@ contract ERC721 is ERC165 {
      * either {approve} or {setApprovalForAll}.
      */
     function transferFrom(address from, address to, uint256 tokenId) public;
-    function approve(address to, uint256 tokenId) public;
+    function approve(address to, uint256 tokenId) external;
     function getApproved(uint256 tokenId) public view returns (address operator);
 
-    function setApprovalForAll(address operator, bool _approved) public;
+    function setApprovalForAll(address operator, bool _approved) external;
     function isApprovedForAll(address owner, address operator) public view returns (bool);
 
 

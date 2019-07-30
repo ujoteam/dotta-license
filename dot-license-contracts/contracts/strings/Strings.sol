@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 library Strings {
   // via https://github.com/oraclize/ethereum-api/blob/master/oraclizeAPI_0.5.sol
@@ -43,7 +43,7 @@ library Strings {
         bytes memory bstr = new bytes(len);
         uint k = len - 1;
         while (i != 0) {
-            bstr[k--] = byte(48 + i % 10);
+            bstr[k--] = byte(48 + uint8(i % 10));
             i /= 10;
         }
         return string(bstr);

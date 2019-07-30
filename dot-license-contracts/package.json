@@ -42,7 +42,7 @@
     "dirty-chai": "^2.0.1",
     "ganache-cli": "6.1.0",
     "nodemon": "^1.15.0",
-    "truffle": "4.1.5",
+    "truffle": "^5.0.29",
     "tsc-watch": "^1.0.16",
     "types-bn": "^0.0.1",
     "types-ethereumjs-util": "^0.0.8",

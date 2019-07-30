@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./ERC721.sol";
 
@@ -8,7 +8,7 @@ import "./ERC721.sol";
  */
 contract ERC721Enumerable is ERC721 {
     function totalSupply() public view returns (uint256);
-    function tokenOfOwnerByIndex(address owner, uint256 index) public view returns (uint256 tokenId);
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
 
-    function tokenByIndex(uint256 index) public view returns (uint256);
+    function tokenByIndex(uint256 index) external view returns (uint256);
 }

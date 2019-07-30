@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
 
@@ -36,7 +36,7 @@ contract LicenseAccessControl is Ownable {
    */
   function withdrawBalance() external onlyOwner {
     require(withdrawalAddress != address(0));
-    withdrawalAddress.transfer(this.balance);
+    // withdrawalAddress.transfer(this.balance);
   }
 
   /** Pausable functionality adapted from OpenZeppelin **/
@@ -62,7 +62,7 @@ contract LicenseAccessControl is Ownable {
    */
   function pause() public onlyOwner whenNotPaused {
     paused = true;
-    Paused();
+    emit Paused();
   }
 
   /**
@@ -70,6 +70,6 @@ contract LicenseAccessControl is Ownable {
    */
   function unpause() public {
     paused = false;
-    Unpaused();
+    emit Unpaused();
   }
 }

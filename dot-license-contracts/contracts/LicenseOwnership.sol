@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./LicenseInventory.sol";
 import "./interfaces/ERC721.sol";
@@ -40,14 +40,14 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   /**
    * @notice token's name
    */
-  function name() external pure returns (string memory) {
+  function name() external view returns (string memory) {
     return NAME;
   }
 
   /**
    * @notice symbols's name
    */
-  function symbol() external pure returns (string memory) {
+  function symbol() external view returns (string memory) {
     return SYMBOL;
   }
 
@@ -226,9 +226,9 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   {
     address owner = ownerOf(_tokenId);
     require(_to != owner);
-    if (getApproved(_tokenId) != 0 || _to != 0) {
+    if (getApproved(_tokenId) != address(0x0) || _to != address(0x0)) {
       tokenApprovals[_tokenId] = _to;
-      Approval(owner, _to, _tokenId);
+      emit Approval(owner, _to, _tokenId);
     }
   }
 
@@ -260,7 +260,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     require(_to != msg.sender);
     require(_to != address(0));
     operatorApprovals[msg.sender][_to] = true;
-    ApprovalForAll(msg.sender, _to, true);
+    emit ApprovalForAll(msg.sender, _to, true);
   }
 
   /**
@@ -276,7 +276,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   {
     require(_to != msg.sender);
     delete operatorApprovals[msg.sender][_to];
-    ApprovalForAll(msg.sender, _to, false);
+    emit ApprovalForAll(msg.sender, _to, false);
   }
 
   /**
@@ -372,7 +372,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   function _mint(address _to, uint256 _tokenId) internal {
     require(_to != address(0));
     _addToken(_to, _tokenId);
-    Transfer(0x0, _to, _tokenId);
+    emit Transfer(address(0x0), _to, _tokenId);
   }
 
   /**
@@ -390,7 +390,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     _clearApproval(_from, _tokenId);
     _removeToken(_from, _tokenId);
     _addToken(_to, _tokenId);
-    Transfer(_from, _to, _tokenId);
+    emit Transfer(_from, _to, _tokenId);
   }
 
   /**
@@ -399,8 +399,8 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   */
   function _clearApproval(address _owner, uint256 _tokenId) private {
     require(ownerOf(_tokenId) == _owner);
-    tokenApprovals[_tokenId] = 0;
-    Approval(_owner, 0, _tokenId);
+    tokenApprovals[_tokenId] = address(0x0);
+    emit Approval(_owner, address(0x0), _tokenId);
   }
 
   /**
@@ -429,7 +429,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     uint256 lastTokenIndex = balanceOf(_from).sub(1);
     uint256 lastToken = ownedTokens[_from][lastTokenIndex];
 
-    tokenOwner[_tokenId] = 0;
+    tokenOwner[_tokenId] = address(0x0);
     ownedTokens[_from][tokenIndex] = lastToken;
     ownedTokens[_from][lastTokenIndex] = 0;
     // Note that this will handle single-element arrays. In that case, both tokenIndex and lastTokenIndex are going to

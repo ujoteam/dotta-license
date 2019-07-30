@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "../math/SafeMath.sol";
 import "../math/Math.sol";
@@ -101,7 +101,7 @@ contract AffiliateProgram is Pausable {
   modifier onlyStoreOrOwner() {
     require(
       msg.sender == storeAddress ||
-      msg.sender == owner);
+      msg.sender == owner());
     _;
   }
 
@@ -156,10 +156,10 @@ contract AffiliateProgram is Pausable {
       if(whitelistedRate == 1) {
         return 0;
       } else {
-        return Math.min256(whitelistedRate, maximumRate);
+        return Math.min(whitelistedRate, maximumRate);
       }
     } else {
-      return Math.min256(baselineRate, maximumRate);
+      return Math.min(baselineRate, maximumRate);
     }
   }
 
@@ -210,7 +210,7 @@ contract AffiliateProgram is Pausable {
     balances[_affiliate] += msg.value;
     lastDepositTimes[_affiliate] = now; // solium-disable-line security/no-block-members
     lastDepositTime = now; // solium-disable-line security/no-block-members
-    AffiliateCredit(_affiliate, _purchaseId, msg.value);
+    emit AffiliateCredit(_affiliate, _purchaseId, msg.value);
   }
 
   /**
@@ -225,8 +225,8 @@ contract AffiliateProgram is Pausable {
     require(balances[_from] > 0);
     uint256 balanceValue = balances[_from];
     balances[_from] = 0;
-    _to.transfer(balanceValue);
-    Withdraw(_from, _to, balanceValue);
+    // _to.transfer(balanceValue);
+    emit Withdraw(_from, _to, balanceValue);
   }
 
   /**
@@ -269,7 +269,7 @@ contract AffiliateProgram is Pausable {
   function retire(address _to) onlyOwner whenPaused public {
     // solium-disable-next-line security/no-block-members
     require(now > lastDepositTime.add(commissionExpiryTime));
-    _to.transfer(this.balance);
+    // _to.transfer(this.balance);
     retired = true;
   }
 
@@ -284,7 +284,7 @@ contract AffiliateProgram is Pausable {
   function whitelist(address _affiliate, uint256 _rate) onlyOwner public {
     require(_rate <= hardCodedMaximumRate);
     whitelistRates[_affiliate] = _rate;
-    Whitelisted(_affiliate, _rate);
+    emit Whitelisted(_affiliate, _rate);
   }
 
   /**
@@ -295,7 +295,7 @@ contract AffiliateProgram is Pausable {
   function setBaselineRate(uint256 _newRate) onlyOwner public {
     require(_newRate <= hardCodedMaximumRate);
     baselineRate = _newRate;
-    RateChanged(0, _newRate);
+    emit RateChanged(0, _newRate);
   }
 
   /**
@@ -306,7 +306,7 @@ contract AffiliateProgram is Pausable {
   function setMaximumRate(uint256 _newRate) onlyOwner public {
     require(_newRate <= hardCodedMaximumRate);
     maximumRate = _newRate;
-    RateChanged(1, _newRate);
+    emit RateChanged(1, _newRate);
   }
 
   /**
@@ -317,7 +317,7 @@ contract AffiliateProgram is Pausable {
   function unpause() onlyOwner whenPaused public {
     require(!retired);
     paused = false;
-    Unpause();
+    emit Unpause();
   }
 
 }

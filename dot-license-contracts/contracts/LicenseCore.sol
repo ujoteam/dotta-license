@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
 
@@ -12,16 +12,14 @@ import "./LicenseSale.sol";
 contract LicenseCore is Ownable, LicenseSale {
   address public newContractAddress;
 
-  constructor () public {
+  constructor() public {
     paused = false;
-
-    owner = msg.sender;
     withdrawalAddress = msg.sender;
   }
 
   function setNewAddress(address _v2Address) external onlyOwner whenPaused {
     newContractAddress = _v2Address;
-    ContractUpgrade(_v2Address);
+    emit ContractUpgrade(_v2Address);
   }
 
   function() external {

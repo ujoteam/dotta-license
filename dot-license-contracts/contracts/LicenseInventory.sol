@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./LicenseBase.sol";
 import "./math/SafeMath.sol";
@@ -81,7 +81,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     products[_productId] = _product;
     allProductIds.push(_productId);
 
-    ProductCreated(
+    emit ProductCreated(
       _product.id,
       _product.price,
       _product.available,
@@ -195,7 +195,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     onlyOwner
   {
     _incrementInventory(_productId, _inventoryAdjustment);
-    ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
+    emit ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
   }
 
   /**
@@ -210,7 +210,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     onlyOwner
   {
     _decrementInventory(_productId, _inventoryAdjustment);
-    ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
+    emit ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
   }
 
   /**
@@ -229,7 +229,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     onlyOwner
   {
     _clearInventory(_productId);
-    ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
+    emit ProductInventoryAdjusted(_productId, availableInventoryOf(_productId));
   }
 
   /**
@@ -242,7 +242,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     onlyOwner
   {
     _setPrice(_productId, _price);
-    ProductPriceChanged(_productId, _price);
+    emit ProductPriceChanged(_productId, _price);
   }
 
   /**
@@ -255,7 +255,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     onlyOwner
   {
     _setRenewable(_productId, _newRenewable);
-    ProductRenewableChanged(_productId, _newRenewable);
+    emit ProductRenewableChanged(_productId, _newRenewable);
   }
 
   /** anyone **/

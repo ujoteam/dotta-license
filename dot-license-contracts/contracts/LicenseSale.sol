@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
 
@@ -14,7 +14,7 @@ contract LicenseSale is Ownable, LicenseOwnership {
    * a monthly plan, the affiliate will receive credits for that whole year, as
    * the user renews their plan
    */
-  uint256 public renewalsCreditAffiliatesFor = 1 years;
+  uint256 public renewalsCreditAffiliatesFor = 365 days;
 
   /** internal **/
   function _performPurchase(
@@ -63,7 +63,7 @@ contract LicenseSale is Ownable, LicenseOwnership {
     });
 
     uint256 newLicenseId = licenses.push(_license) - 1; // solium-disable-line zeppelin/no-arithmetic-operations
-    LicenseIssued(
+    emit LicenseIssued(
       _assignee,
       msg.sender,
       newLicenseId,
@@ -102,14 +102,14 @@ contract LicenseSale is Ownable, LicenseOwnership {
 
     // If our expiration is in the future, renewing adds time to that future expiration
     // If our expiration has passed already, then we use `now` as the base.
-    uint256 renewalBaseTime = Math.max256(now, licenses[_tokenId].expirationTime);
+    uint256 renewalBaseTime = Math.max(now, licenses[_tokenId].expirationTime);
 
     // We assume that the payment has been validated outside of this function
     uint256 newExpirationTime = renewalBaseTime.add(intervalOf(productId).mul(_numCycles));
 
     licenses[_tokenId].expirationTime = newExpirationTime;
 
-    LicenseRenewal(
+    emit LicenseRenewal(
       ownerOf(_tokenId),
       msg.sender,
       _tokenId,
@@ -120,7 +120,7 @@ contract LicenseSale is Ownable, LicenseOwnership {
 
   function _affiliateProgramIsActive() internal view returns (bool) {
     return
-      affiliateProgram != address(0) &&
+      address(affiliateProgram) != address(0) &&
       affiliateProgram.storeAddress() == address(this) &&
       !affiliateProgram.paused();
   }
@@ -207,7 +207,7 @@ contract LicenseSale is Ownable, LicenseOwnership {
     // this can, of course, be gamed by malicious miners. But it's adequate for our application
     // Feel free to add your own strategies for product attributes
     // solium-disable-next-line security/no-block-members, zeppelin/no-arithmetic-operations
-    uint256 attributes = uint256(keccak256(block.blockhash(block.number-1)))^_productId^(uint256(_assignee));
+    uint256 attributes = uint256(keccak256(abi.encodePacked(block.blockhash(block.number-1))))^_productId^(uint256(_assignee));
     uint256 licenseId = _performPurchase(
       _productId,
       _numCycles,
