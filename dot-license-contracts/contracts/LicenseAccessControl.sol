@@ -26,7 +26,7 @@ contract LicenseAccessControl is Ownable {
    * @param _newWithdrawalAddress - the address where we'll send the funds
    */
   function setWithdrawalAddress(address _newWithdrawalAddress) external onlyOwner {
-    require(_newWithdrawalAddress != address(0));
+    require(_newWithdrawalAddress != address(0), "LicenseAccessControl.setWithdrawalAddress(): new withdrawalAddress must be non-zero");
     withdrawalAddress = _newWithdrawalAddress;
   }
 
@@ -35,8 +35,10 @@ contract LicenseAccessControl is Ownable {
    * @dev We set a withdrawal address seperate from the CFO because this allows us to withdraw to a cold wallet.
    */
   function withdrawBalance() external onlyOwner {
-    require(withdrawalAddress != address(0));
-    withdrawalAddress.transfer(this.balance);
+    require(withdrawalAddress != address(0), "LicenseAccessControl.withdrawBalance(): withdrawalAddress must be non-zero");
+
+    bool ok = daiContract.transfer(withdrawalAddress, daiContract.balanceOf(this));
+    require(ok, "LicenseAccessControl.withdrawBalance(): DAI transfer failed");
   }
 
   /** Pausable functionality adapted from OpenZeppelin **/
