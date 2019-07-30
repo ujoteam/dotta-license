@@ -1,16 +1,16 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.5.0;
 
 import "./LicenseInventory.sol";
 import "./interfaces/ERC721.sol";
 import "./interfaces/ERC721Metadata.sol";
 import "./interfaces/ERC721Enumerable.sol";
 import "./interfaces/ERC165.sol";
-import "./interfaces/ERC721TokenReceiver.sol";
+import "./interfaces/ERC721Receiver.sol";
 import "./strings/Strings.sol";
 import "./ownership/Ownable.sol";
 
 
-contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Metadata, ERC721Enumerable {
+contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Metadata, ERC721Enumerable {
   using SafeMath for uint256;
 
   // Total amount of tokens
@@ -40,14 +40,14 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Me
   /**
    * @notice token's name
    */
-  function name() external pure returns (string) {
+  function name() external pure returns (string memory) {
     return NAME;
   }
 
   /**
    * @notice symbols's name
    */
-  function symbol() external pure returns (string) {
+  function symbol() external pure returns (string memory) {
     return SYMBOL;
   }
 
@@ -58,7 +58,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Me
   function tokenURI(uint256 _tokenId)
     external
     view
-    returns (string infoUrl)
+    returns (string memory infoUrl)
   {
     return Strings.strConcat(
       tokenMetadataBaseURI,
@@ -76,7 +76,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Me
       interfaceID == 0x780e9d63; // ERC721Enumerable
   }
 
-  function setTokenMetadataBaseURI(string _newBaseURI) external onlyOwner {
+  function setTokenMetadataBaseURI(string calldata _newBaseURI) external onlyOwner {
     tokenMetadataBaseURI = _newBaseURI;
   }
 
@@ -126,7 +126,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Me
   * @param _owner address to query the tokens of
   * @return uint256[] representing the list of tokens owned by the passed address
   */
-  function tokensOf(address _owner) public view returns (uint256[]) {
+  function tokensOf(address _owner) public view returns (uint256[] memory) {
     return ownedTokens[_owner];
   }
 
@@ -329,7 +329,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Me
     address _from,
     address _to,
     uint256 _tokenId,
-    bytes _data
+    bytes memory _data
   )
     public
     whenNotPaused
@@ -338,7 +338,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC721, ERC165, ERC721Me
     require(_isValidLicense(_tokenId));
     transferFrom(_from, _to, _tokenId);
     if (_isContract(_to)) {
-      bytes4 tokenReceiverResponse = ERC721TokenReceiver(_to).onERC721Received.gas(50000)(
+      bytes4 tokenReceiverResponse = ERC721Receiver(_to).onERC721Received.gas(50000)(
         _from, _tokenId, _data
       );
       require(tokenReceiverResponse == bytes4(keccak256("onERC721Received(address,uint256,bytes)")));

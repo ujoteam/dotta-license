@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.5.0;
 
 import "./ownership/Ownable.sol";
 
@@ -12,7 +12,7 @@ import "./LicenseSale.sol";
 contract LicenseCore is Ownable, LicenseSale {
   address public newContractAddress;
 
-  function LicenseCore() public {
+  constructor () public {
     paused = false;
 
     owner = msg.sender;

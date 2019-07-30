@@ -74,10 +74,13 @@ module.exports = {
       gasPrice: 1000000000 // 1 gwei
     }
   },
-  solc: {
-    optimizer: {
-      enabled: true,
-      runs: 200
+  compilers: {
+    solc: {
+      version: "0.5.10",
+      optimizer: {
+        enabled: false,
+        runs: 200
+      },
     }
   },
   test_directory: 'transpiled/test',

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.5.0;
 
 import "./LicenseBase.sol";
 import "./math/SafeMath.sol";
@@ -329,7 +329,7 @@ contract LicenseInventory is Ownable, LicenseBase {
   /**
   * @notice Get all product ids
   */
-  function getAllProductIds() public view returns (uint256[]) {
+  function getAllProductIds() public view returns (uint256[] memory) {
     return allProductIds;
   }
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.5.0;
 
 import "../math/SafeMath.sol";
 import "../math/Math.sol";
@@ -109,7 +109,7 @@ contract AffiliateProgram is Pausable {
    * @dev AffiliateProgram constructor - keeps the address of it's parent store
    * and pauses the contract
    */
-  function AffiliateProgram(address _storeAddress) public {
+  constructor (address _storeAddress) public {
     require(_storeAddress != address(0));
     storeAddress = _storeAddress;
     paused = true;
