@@ -1,11 +1,13 @@
 pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
+import "./interfaces/ERC20.sol";
 
 import "./LicenseOwnership.sol";
 import "./Affiliate/AffiliateProgram.sol";
+import "./DAITransactor.sol";
 
-contract LicenseSale is Ownable, LicenseOwnership {
+contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
   AffiliateProgram public affiliateProgram;
 
   /**
@@ -185,18 +187,22 @@ contract LicenseSale is Ownable, LicenseOwnership {
     address _affiliate
     )
     external
-    payable
     whenNotPaused
     returns (uint256)
   {
-    require(_productId != 0);
-    require(_numCycles != 0);
-    require(_assignee != address(0));
+    require(daiContract != 0, "LicenseSale.purchase(): DAI contract address is unset");
+    require(_productId != 0, "LicenseSale.purchase(): productID must be non-zero");
+    require(_numCycles != 0, "LicenseSale.purchase(): numCycles must be non-zero");
+    require(_assignee != address(0), "LicenseSale.purchase(): assignee must be non-zero");
     // msg.value can be zero: free products are supported
 
     // Don't bother dealing with excess payments. Ensure the price paid is
     // accurate. No more, no less.
-    require(msg.value == costForProductCycles(_productId, _numCycles));
+    // require(msg.value == costForProductCycles(_productId, _numCycles));
+    uint256 cost = costForProductCycles(_productId, _numCycles);
+    require(daiContract.allowance(msg.sender, this) >= cost, "LicenseSale.purchase(): not enough DAI");
+    bool ok = daiContract.transferFrom(msg.sender, this, cost);
+    require(ok, "LicenseSale.purchase(): DAI transfer failed");
 
     // Non-subscription products should send a _numCycle of 1 -- you can't buy a
     // multiple quantity of a non-subscription product with this function
@@ -224,7 +230,7 @@ contract LicenseSale is Ownable, LicenseOwnership {
         _affiliate,
         _productId,
         licenseId,
-        msg.value);
+        cost);
     }
 
     return licenseId;
@@ -238,7 +244,6 @@ contract LicenseSale is Ownable, LicenseOwnership {
     uint256 _numCycles
     )
     external
-    payable
     whenNotPaused
   {
     require(_numCycles != 0);
@@ -247,10 +252,11 @@ contract LicenseSale is Ownable, LicenseOwnership {
     uint256 productId = licenseProductId(_tokenId);
     _requireRenewableProduct(productId);
 
-    // No excess payments. Ensure the price paid is exactly accurate. No more,
-    // no less.
+    // Transfer the DAI
     uint256 renewalCost = costForProductCycles(productId, _numCycles);
-    require(msg.value == renewalCost);
+    require(daiContract.allowance(msg.sender, this) >= renewalCost, "LicenseSale.renew(): not enough DAI");
+    bool ok = daiContract.transferFrom(msg.sender, this, renewalCost);
+    require(ok, "LicenseSale.renew(): DAI transfer failed");
 
     _performRenewal(_tokenId, _numCycles);
 
@@ -264,7 +270,7 @@ contract LicenseSale is Ownable, LicenseOwnership {
         licenseAffiliate(_tokenId),
         productId,
         _tokenId,
-        msg.value);
+        renewalCost);
     }
   }
 

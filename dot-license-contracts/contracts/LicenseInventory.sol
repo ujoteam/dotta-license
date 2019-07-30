@@ -65,8 +65,8 @@ contract LicenseInventory is Ownable, LicenseBase {
     uint256 _interval)
     internal
   {
-    require(_productDoesNotExist(_productId));
-    require(_initialInventoryQuantity <= _supply);
+    require(_productDoesNotExist(_productId), "LicenseInventory._createProduct(): product already exists");
+    require(_initialInventoryQuantity <= _supply, "LicenseInventory._createProduct(): initialInventoryQuantity > supply");
 
     Product memory _product = Product({
       id: _productId,
@@ -96,13 +96,13 @@ contract LicenseInventory is Ownable, LicenseBase {
     uint256 _inventoryAdjustment)
     internal
   {
-    require(_productExists(_productId));
+    require(_productExists(_productId), "LicenseInventory._incrementInventory(): product does not exist");
     uint256 newInventoryLevel = products[_productId].available.add(_inventoryAdjustment);
 
     // A supply of "0" means "unlimited". Otherwise we need to ensure that we're not over-creating this product
     if(products[_productId].supply > 0) {
       // you have to take already sold into account
-      require(products[_productId].sold.add(newInventoryLevel) <= products[_productId].supply);
+      require(products[_productId].sold.add(newInventoryLevel) <= products[_productId].supply, "LicenseInventory._incrementInventory(): that would exceed maximum supply");
     }
 
     products[_productId].available = newInventoryLevel;
@@ -113,7 +113,7 @@ contract LicenseInventory is Ownable, LicenseBase {
     uint256 _inventoryAdjustment)
     internal
   {
-    require(_productExists(_productId));
+    require(_productExists(_productId), "LicenseInventory._decrementInventory(): product does not exist");
     uint256 newInventoryLevel = products[_productId].available.sub(_inventoryAdjustment);
     // unnecessary because we're using SafeMath and an unsigned int
     // require(newInventoryLevel >= 0);
@@ -121,23 +121,23 @@ contract LicenseInventory is Ownable, LicenseBase {
   }
 
   function _clearInventory(uint256 _productId) internal {
-    require(_productExists(_productId));
+    require(_productExists(_productId), "LicenseInventory._clearInventory(): product does not exist");
     products[_productId].available = 0;
   }
 
   function _setPrice(uint256 _productId, uint256 _price) internal {
-    require(_productExists(_productId));
+    require(_productExists(_productId), "LicenseInventory._setPrice(): product does not exist");
     products[_productId].price = _price;
   }
 
   function _setRenewable(uint256 _productId, bool _isRenewable) internal {
-    require(_productExists(_productId));
+    require(_productExists(_productId), "LicenseInventory._setRenewable(): product does not exist");
     products[_productId].renewable = _isRenewable;
   }
 
   function _purchaseOneUnitInStock(uint256 _productId) internal {
-    require(_productExists(_productId));
-    require(availableInventoryOf(_productId) > 0);
+    require(_productExists(_productId), "LicenseInventory._purchaseOneUnitInStock(): product does not exist");
+    require(availableInventoryOf(_productId) > 0, "LicenseInventory._purchaseOneUnitInStock(): no available inventory");
 
     // lower inventory
     _decrementInventory(_productId, 1);
@@ -148,11 +148,11 @@ contract LicenseInventory is Ownable, LicenseBase {
 
   function _requireRenewableProduct(uint256 _productId) internal view {
     // productId must exist
-    require(_productId != 0);
+    require(_productId != 0, "LicenseInventory._requireRenewableProduct(): productID must be non-zero");
     // You can only renew a subscription product
-    require(isSubscriptionProduct(_productId));
+    require(isSubscriptionProduct(_productId), "LicenseInventory._requireRenewableProduct(): not a subscription product");
     // The product must currently be renewable
-    require(renewableOf(_productId));
+    require(renewableOf(_productId), "LicenseInventory._requireRenewableProduct(): product is not renewable");
   }
 
   /*** public ***/

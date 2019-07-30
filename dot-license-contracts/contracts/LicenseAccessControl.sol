@@ -1,12 +1,13 @@
 pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
+import "./DAITransactor.sol";
 
 /**
  * @title LicenseAccessControl
  * @notice This contract defines organizational roles and permissions.
  */
-contract LicenseAccessControl is Ownable {
+contract LicenseAccessControl is Ownable, DAITransactor {
   /**
    * @notice ContractUpgrade is the event that will be emitted if we set a new contract address
    */
@@ -26,7 +27,7 @@ contract LicenseAccessControl is Ownable {
    * @param _newWithdrawalAddress - the address where we'll send the funds
    */
   function setWithdrawalAddress(address _newWithdrawalAddress) external onlyOwner {
-    require(_newWithdrawalAddress != address(0));
+    require(_newWithdrawalAddress != address(0), "LicenseAccessControl.setWithdrawalAddress(): new withdrawalAddress must be non-zero");
     withdrawalAddress = _newWithdrawalAddress;
   }
 
@@ -35,8 +36,10 @@ contract LicenseAccessControl is Ownable {
    * @dev We set a withdrawal address seperate from the CFO because this allows us to withdraw to a cold wallet.
    */
   function withdrawBalance() external onlyOwner {
-    require(withdrawalAddress != address(0));
-    // withdrawalAddress.transfer(this.balance);
+    require(withdrawalAddress != address(0), "LicenseAccessControl.withdrawBalance(): withdrawalAddress must be non-zero");
+
+    bool ok = daiContract.transfer(withdrawalAddress, daiContract.balanceOf(address(this)));
+    require(ok, "LicenseAccessControl.withdrawBalance(): DAI transfer failed");
   }
 
   /** Pausable functionality adapted from OpenZeppelin **/

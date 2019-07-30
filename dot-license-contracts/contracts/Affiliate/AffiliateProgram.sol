@@ -3,6 +3,8 @@ pragma solidity 0.5.0;
 import "../math/SafeMath.sol";
 import "../math/Math.sol";
 import "../lifecycle/Pausable.sol";
+import "../interfaces/ERC20.sol";
+import "../DAITransactor.sol";
 
 /**
  * @title AffiliateProrgam
@@ -41,7 +43,7 @@ import "../lifecycle/Pausable.sol";
  * is paused or missing.
  *
  */
-contract AffiliateProgram is Pausable {
+contract AffiliateProgram is Pausable, DAITransactor {
   using SafeMath for uint256;
 
   event AffiliateCredit(
@@ -101,7 +103,7 @@ contract AffiliateProgram is Pausable {
   modifier onlyStoreOrOwner() {
     require(
       msg.sender == storeAddress ||
-      msg.sender == owner());
+      msg.sender == owner(), "AffiliateProgram.onlyStoreOrOwner(): only the store or owner can do that");
     _;
   }
 
@@ -110,7 +112,7 @@ contract AffiliateProgram is Pausable {
    * and pauses the contract
    */
   constructor (address _storeAddress) public {
-    require(_storeAddress != address(0));
+    require(_storeAddress != address(0), "AffiliateProgram.constructor(): storeAddress must be non-zero");
     storeAddress = _storeAddress;
     paused = true;
   }
@@ -186,7 +188,7 @@ contract AffiliateProgram is Pausable {
       _productId,
       _purchaseId,
       _purchaseAmount);
-    require(rate <= hardCodedMaximumRate);
+    require(rate <= hardCodedMaximumRate, "AffiliateProgram.cutFor(): rate is greater than hardCodedMaximumRate");
     return (_purchaseAmount.mul(rate)).div(10000);
   }
 
@@ -199,18 +201,22 @@ contract AffiliateProgram is Pausable {
    */
   function credit(
     address _affiliate,
-    uint256 _purchaseId)
+    uint256 _purchaseId,
+    uint256 value)
     public
     onlyStoreOrOwner
     whenNotPaused
-    payable
   {
-    require(msg.value > 0);
-    require(_affiliate != address(0));
-    balances[_affiliate] += msg.value;
+    require(daiContract.allowance(msg.sender, address(this)) >= value, "AffiliateProgram.credit(): not enough DAI");
+    require(_affiliate != address(0), "AffiliateProgram.credit(): affiliate must be non-zero");
+
+    bool ok = daiContract.transferFrom(msg.sender, address(this), value);
+    require(ok, "AffiliateProgram.credit(): DAI transfer failed");
+    balances[_affiliate] += value;
+
     lastDepositTimes[_affiliate] = now; // solium-disable-line security/no-block-members
     lastDepositTime = now; // solium-disable-line security/no-block-members
-    emit AffiliateCredit(_affiliate, _purchaseId, msg.value);
+    emit AffiliateCredit(_affiliate, _purchaseId, value);
   }
 
   /**
@@ -222,10 +228,14 @@ contract AffiliateProgram is Pausable {
    * @param _to - the address to transfer ETH to
    */
   function _performWithdraw(address _from, address _to) private {
-    require(balances[_from] > 0);
+    require(balances[_from] > 0, "AffiliateProgram._performWithdraw(): nothing to withdraw");
+
     uint256 balanceValue = balances[_from];
     balances[_from] = 0;
-    // _to.transfer(balanceValue);
+
+    bool ok = daiContract.transfer(_to, balanceValue);
+    require(ok, "AffiliateProgram._performWithdraw(): DAI transfer failed");
+
     emit Withdraw(_from, _to, balanceValue);
   }
 
@@ -249,7 +259,7 @@ contract AffiliateProgram is Pausable {
    */
   function withdrawFrom(address _affiliate, address _to) onlyOwner public {
     // solium-disable-next-line security/no-block-members
-    require(now > lastDepositTimes[_affiliate].add(commissionExpiryTime));
+    require(now > lastDepositTimes[_affiliate].add(commissionExpiryTime), "AffiliateProgram.withdrawFrom(): commission expired");
     _performWithdraw(_affiliate, _to);
   }
 
@@ -268,8 +278,9 @@ contract AffiliateProgram is Pausable {
    */
   function retire(address _to) onlyOwner whenPaused public {
     // solium-disable-next-line security/no-block-members
-    require(now > lastDepositTime.add(commissionExpiryTime));
-    // _to.transfer(this.balance);
+    require(now > lastDepositTime.add(commissionExpiryTime), "AffiliateProgram.retire(): commission expired");
+    bool ok = daiContract.transfer(_to, daiContract.balanceOf(address(this)));
+    require(ok, "AffiliateProgram.retire(): DAI transfer failed");
     retired = true;
   }
 
@@ -282,7 +293,7 @@ contract AffiliateProgram is Pausable {
    * @param _rate - the rate, in basis-points (1/100th of a percent) to give this affiliate in each sale. NOTE: a rate of exactly 1 is the signal to blacklist this affiliate. That is, a rate of 1 will set the commission to 0.
    */
   function whitelist(address _affiliate, uint256 _rate) onlyOwner public {
-    require(_rate <= hardCodedMaximumRate);
+    require(_rate <= hardCodedMaximumRate, "AffiliateProgram.whitelist(): rate > hardCodedMaximumRate");
     whitelistRates[_affiliate] = _rate;
     emit Whitelisted(_affiliate, _rate);
   }
@@ -293,7 +304,7 @@ contract AffiliateProgram is Pausable {
    * @param _newRate - the rate, in bp (1/100th of a percent) to give any non-whitelisted affiliate. Set to zero to "turn off"
    */
   function setBaselineRate(uint256 _newRate) onlyOwner public {
-    require(_newRate <= hardCodedMaximumRate);
+    require(_newRate <= hardCodedMaximumRate, "AffiliateProgram.setBaselineRate(): newRate > hardCodedMaximumRate");
     baselineRate = _newRate;
     emit RateChanged(0, _newRate);
   }
@@ -304,7 +315,7 @@ contract AffiliateProgram is Pausable {
    * @param _newRate - the rate, in bp (1/100th of a percent)
    */
   function setMaximumRate(uint256 _newRate) onlyOwner public {
-    require(_newRate <= hardCodedMaximumRate);
+    require(_newRate <= hardCodedMaximumRate, "AffiliateProgram.setMaximumRate(): newRate > hardCodedMaximumRate");
     maximumRate = _newRate;
     emit RateChanged(1, _newRate);
   }

@@ -85,7 +85,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _tokenId uint256 ID of the token to validate its ownership belongs to msg.sender
   */
   modifier onlyOwnerOf(uint256 _tokenId) {
-    require(ownerOf(_tokenId) == msg.sender);
+    require(ownerOf(_tokenId) == msg.sender, "LicenseOwnership.onlyOwnerOf(): only the owner of that token can do that");
     _;
   }
 
@@ -107,7 +107,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @return The token identifier for the `_index`th NFT
   */
   function tokenByIndex(uint256 _index) external view returns (uint256) {
-    require(_index < totalSupply());
+    require(_index < totalSupply(), "LicenseOwnership.tokenByIndex(): token index out of range");
     return _index;
   }
 
@@ -117,7 +117,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @return uint256 representing the amount owned by the passed address
   */
   function balanceOf(address _owner) public view returns (uint256) {
-    require(_owner != address(0));
+    require(_owner != address(0), "LicenseOwnership.balanceOf(): owner must be non-zero");
     return ownedTokens[_owner].length;
   }
 
@@ -143,7 +143,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     view
     returns (uint256 _tokenId)
   {
-    require(_index < balanceOf(_owner));
+    require(_index < balanceOf(_owner), "LicenseOwnership.tokenOfOwnerByIndex(): token index out of range");
     return ownedTokens[_owner][_index];
   }
 
@@ -154,7 +154,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   */
   function ownerOf(uint256 _tokenId) public view returns (address) {
     address owner = tokenOwner[_tokenId];
-    require(owner != address(0));
+    require(owner != address(0), "LicenseOwnership.ownerOf(): owner must be non-zero");
     return owner;
   }
 
@@ -225,7 +225,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     onlyOwnerOf(_tokenId)
   {
     address owner = ownerOf(_tokenId);
-    require(_to != owner);
+    require(_to != owner, "LicenseOwnership.approve(): new owner must be different from old owner");
     if (getApproved(_tokenId) != address(0x0) || _to != address(0x0)) {
       tokenApprovals[_tokenId] = _to;
       emit Approval(owner, _to, _tokenId);
@@ -257,8 +257,8 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     public
     whenNotPaused
   {
-    require(_to != msg.sender);
-    require(_to != address(0));
+    require(_to != msg.sender, "LicenseOwnership.approveAll(): new owner can't be yourself");
+    require(_to != address(0), "LicenseOwnership.approveAll(): new owner must be non-zero");
     operatorApprovals[msg.sender][_to] = true;
     emit ApprovalForAll(msg.sender, _to, true);
   }
@@ -274,7 +274,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     public
     whenNotPaused
   {
-    require(_to != msg.sender);
+    require(_to != msg.sender, "LicenseOwnership.disapproveAll(): new owner can't be yourself");
     delete operatorApprovals[msg.sender][_to];
     emit ApprovalForAll(msg.sender, _to, false);
   }
@@ -287,7 +287,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
    external
    whenNotPaused
   {
-    require(isSenderApprovedFor(_tokenId));
+    require(isSenderApprovedFor(_tokenId), "LicenseOwnership.takeOwnership(): you are not approved to take ownership");
     _clearApprovalAndTransfer(ownerOf(_tokenId), msg.sender, _tokenId);
   }
 
@@ -306,8 +306,8 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     public
     whenNotPaused
   {
-    require(isSenderApprovedFor(_tokenId));
-    require(ownerOf(_tokenId) == _from);
+    require(isSenderApprovedFor(_tokenId), "LicenseOwnership.transferFrom(): you are not approved to transfer that token");
+    require(ownerOf(_tokenId) == _from, "LicenseOwnership.transferFrom(): 'from' must be the current owner of the token");
     _clearApprovalAndTransfer(ownerOf(_tokenId), _to, _tokenId);
   }
 
@@ -334,14 +334,14 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     public
     whenNotPaused
   {
-    require(_to != address(0));
-    require(_isValidLicense(_tokenId));
+    require(_to != address(0), "LicenseOwnership.safeTransferFrom(): 'to' address must be non-zero");
+    require(_isValidLicense(_tokenId), "LicenseOwnership.safeTransferFrom(): not a valid license");
     transferFrom(_from, _to, _tokenId);
     if (_isContract(_to)) {
       bytes4 tokenReceiverResponse = ERC721Receiver(_to).onERC721Received.gas(50000)(
         _from, _tokenId, _data
       );
-      require(tokenReceiverResponse == bytes4(keccak256("onERC721Received(address,uint256,bytes)")));
+      require(tokenReceiverResponse == bytes4(keccak256("onERC721Received(address,uint256,bytes)")), "LicenseOwnership.safeTransferFrom(): bad response from ERC721 token receiver");
     }
   }
 
@@ -370,7 +370,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _tokenId uint256 ID of the token to be minted by the msg.sender
   */
   function _mint(address _to, uint256 _tokenId) internal {
-    require(_to != address(0));
+    require(_to != address(0), "LicenseOwnership._mint(): 'to' address must be non-zero");
     _addToken(_to, _tokenId);
     emit Transfer(address(0x0), _to, _tokenId);
   }
@@ -382,10 +382,10 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _tokenId uint256 ID of the token to be transferred
   */
   function _clearApprovalAndTransfer(address _from, address _to, uint256 _tokenId) internal {
-    require(_to != address(0));
-    require(_to != ownerOf(_tokenId));
-    require(ownerOf(_tokenId) == _from);
-    require(_isValidLicense(_tokenId));
+    require(_to != address(0), "LicenseOwnership._clearApprovalAndTransfer(): 'to' address must be non-zero");
+    require(_to != ownerOf(_tokenId), "LicenseOwnership._clearApprovalAndTransfer(): 'to' address must not be the token's current owner");
+    require(ownerOf(_tokenId) == _from, "LicenseOwnership._clearApprovalAndTransfer(): 'from' address must be the token's current owner");
+    require(_isValidLicense(_tokenId), "LicenseOwnership._clearApprovalAndTransfer(): not a valid license");
 
     _clearApproval(_from, _tokenId);
     _removeToken(_from, _tokenId);
@@ -398,7 +398,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _tokenId uint256 ID of the token to be transferred
   */
   function _clearApproval(address _owner, uint256 _tokenId) private {
-    require(ownerOf(_tokenId) == _owner);
+    require(ownerOf(_tokenId) == _owner, "LicenseOwnership._clearApproval(): 'owner' address must be the token's current owner");
     tokenApprovals[_tokenId] = address(0x0);
     emit Approval(_owner, address(0x0), _tokenId);
   }
@@ -409,7 +409,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _tokenId uint256 ID of the token to be added to the tokens list of the given address
   */
   function _addToken(address _to, uint256 _tokenId) private {
-    require(tokenOwner[_tokenId] == address(0));
+    require(tokenOwner[_tokenId] == address(0), "LicenseOwnership._addToken(): token ID already exists");
     tokenOwner[_tokenId] = _to;
     uint256 length = balanceOf(_to);
     ownedTokens[_to].push(_tokenId);
@@ -423,7 +423,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _tokenId uint256 ID of the token to be removed from the tokens list of the given address
   */
   function _removeToken(address _from, uint256 _tokenId) private {
-    require(ownerOf(_tokenId) == _from);
+    require(ownerOf(_tokenId) == _from, "LicenseOwnership._removeToken(): 'from' address must be the token's current owner");
 
     uint256 tokenIndex = ownedTokensIndex[_tokenId];
     uint256 lastTokenIndex = balanceOf(_from).sub(1);
