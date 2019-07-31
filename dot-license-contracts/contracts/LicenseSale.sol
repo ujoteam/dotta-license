@@ -1,7 +1,7 @@
 pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
-import "./interfaces/ERC20.sol";
+import "./interfaces/IERC20.sol";
 
 import "./LicenseOwnership.sol";
 import "./Affiliate/AffiliateProgram.sol";
@@ -187,6 +187,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     address _affiliate
     )
     external
+    payable
     whenNotPaused
     returns (uint256)
   {

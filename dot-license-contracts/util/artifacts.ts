@@ -8,6 +8,7 @@ export class Artifacts {
   public LicenseBase: any;
   public LicenseAccessControl: any;
   public AffiliateProgram: any;
+  public ERC20: any;
   public ERC721: any;
   public SafeMath: any;
 
@@ -23,6 +24,7 @@ export class Artifacts {
     this.LicenseBase = artifacts.require('LicenseBase');
     this.LicenseAccessControl = artifacts.require('LicenseAccessControl');
     this.ERC721 = artifacts.require('ERC721');
+    this.ERC20 = artifacts.require('ERC20');
     this.SafeMath = artifacts.require('SafeMath');
     this.AffiliateProgram = artifacts.require('AffiliateProgram');
 

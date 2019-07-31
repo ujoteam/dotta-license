@@ -3,7 +3,7 @@ pragma solidity 0.5.0;
 import "../math/SafeMath.sol";
 import "../math/Math.sol";
 import "../lifecycle/Pausable.sol";
-import "../interfaces/ERC20.sol";
+import "../interfaces/IERC20.sol";
 import "../DAITransactor.sol";
 
 /**

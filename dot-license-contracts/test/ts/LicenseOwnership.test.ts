@@ -15,12 +15,16 @@ const { LicenseCoreTest, AffiliateProgram, MockTokenReceiver } = new Artifacts(
   artifacts
 );
 const LicenseCore = LicenseCoreTest;
+
+const { ERC20 } = new Artifacts(artifacts);
+
 chai.should();
 
 const web3: Web3 = (global as any).web3;
 
 contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
   let token: any = null;
+  let daiContract: any = null;
   const creator = accounts[0];
   const _creator = accounts[0];
   const user1 = accounts[1];
@@ -55,6 +59,10 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
   beforeEach(async () => {
     token = await LicenseCore.new({ from: creator });
     await token.transferOwnership(owner, { from: creator });
+
+    // Set DAI contract
+    daiContract = await ERC20.new({ from: owner });
+    token.setDAIContract(daiContract.address, { from: owner });
 
     await token.createProduct(
       firstProduct.id,

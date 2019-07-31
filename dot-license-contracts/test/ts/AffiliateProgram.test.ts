@@ -19,6 +19,9 @@ chaiSetup.configure();
 const expect = chai.expect;
 const { LicenseCoreTest, AffiliateProgram } = new Artifacts(artifacts);
 const LicenseCore = LicenseCoreTest;
+
+const { ERC20 } = new Artifacts(artifacts);
+
 chai.should();
 
 const web3: Web3 = (global as any).web3;
@@ -26,6 +29,7 @@ const web3Eth: any = Bluebird.promisifyAll(web3.eth);
 
 contract('AffiliateProgram', (accounts: string[]) => {
   let token: any = null;
+  let daiContract: any = null;
   let affiliate: any = null;
   const creator = accounts[0];
   const user1 = accounts[1];
@@ -74,6 +78,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
   beforeEach(async () => {
     token = await LicenseCore.new({ from: creator });
     await token.transferOwnership(creator, { from: creator });
+
+    // Set DAI contract
+    daiContract = await ERC20.new({ from: creator });
+    token.setDAIContract(daiContract.address, { from: creator });
 
     await token.createProduct(
       firstProduct.id,
