@@ -15,9 +15,10 @@ module.exports = {
   // to customize your Truffle configuration!
   networks: {
     test: {
-      provider: 'localhost',
-      network_id: '*',
-      gas: 0x1fffffffffffff
+      host: 'localhost',
+      port: 8545,
+      network_id: '*', // Match any network id
+      gas: 0x1fffffffffffff,
     },
     development: {
       host: 'localhost',
