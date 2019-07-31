@@ -15,13 +15,15 @@ module.exports = {
   // to customize your Truffle configuration!
   networks: {
     test: {
-      provider: ganache.provider(),
-      network_id: '*'
+      provider: 'localhost',
+      network_id: '*',
+      gas: 0x1fffffffffffff
     },
     development: {
       host: 'localhost',
       port: 8545,
-      network_id: '*' // Match any network id
+      network_id: '*', // Match any network id
+      gas: 0x1fffffffffffff,
     },
     geth: {
       host: 'localhost',
@@ -78,7 +80,7 @@ module.exports = {
     solc: {
       version: "0.5.0",
       optimizer: {
-        enabled: false,
+        enabled: true,
         runs: 200
       },
     }
