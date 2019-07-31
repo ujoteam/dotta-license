@@ -69,7 +69,10 @@ contract('LicenseSale', (accounts: string[]) => {
 
     // Set DAI contract
     daiContract = await ERC20.new({ from: owner });
-    token.setDAIContract(daiContract.address, { from: owner });
+    await token.setDAIContract(daiContract.address, { from: owner });
+    await daiContract.transfer(user1, 100000, { from: owner })
+    await daiContract.transfer(user2, 100000, { from: owner })
+    await daiContract.transfer(user3, 100000, { from: owner })
 
     p1Created = await token.createProduct(
       firstProduct.id,
@@ -103,6 +106,7 @@ contract('LicenseSale', (accounts: string[]) => {
     describe('it should fail because it', async () => {
       it('should not sell a product that has no inventory', async () => {
         await token.clearInventory(firstProduct.id, { from: owner });
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
@@ -111,14 +115,17 @@ contract('LicenseSale', (accounts: string[]) => {
         );
       });
       it('should not sell a product that was sold out', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         await token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
           from: user1,
           value: firstProduct.price
         });
+        await daiContract.approve(token.address, firstProduct.price, { from: user2 });
         await token.purchase(firstProduct.id, 1, user2, ZERO_ADDRESS, {
           from: user2,
           value: firstProduct.price
         });
+        await daiContract.approve(token.address, firstProduct.price, { from: user3 });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user3, ZERO_ADDRESS, {
             from: user3,
@@ -131,46 +138,52 @@ contract('LicenseSale', (accounts: string[]) => {
         )).should.be.bignumber.equal(0);
       });
       it('should not sell at a price too low', async () => {
+        await daiContract.approve(token.address, firstProduct.price - 1, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
-            value: firstProduct.price - 1
+            // value: firstProduct.price - 1
           })
         );
+        await daiContract.approve(token.address, 0, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
-            value: 0
+            // value: 0
           })
         );
       });
       it('should not sell at a price too high', async () => {
+        await daiContract.approve(token.address, firstProduct.price + 1, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
-            value: firstProduct.price + 1
+            // value: firstProduct.price + 1
           })
         );
       });
       it('should not sell if the contract is paused', async () => {
         await token.pause({ from: owner });
+        await daiContract.approve(token.address, firstProduct.price + 1, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
             from: user1,
-            value: firstProduct.price + 1
+            // value: firstProduct.price + 1
           })
         );
       });
 
       it('should not sell any product for 0 cycles', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 0, user1, ZERO_ADDRESS, {
             from: user1,
-            value: firstProduct.price
+            // value: firstProduct.price
           })
         );
       });
       it('should not sell a non-subscription product for more cycles than 1', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         await assertRevert(
           token.purchase(firstProduct.id, 2, user1, ZERO_ADDRESS, {
             from: user1,
@@ -179,14 +192,16 @@ contract('LicenseSale', (accounts: string[]) => {
         );
       });
       it('should not sell a subscription for a value less than the number of cycles requires', async () => {
+        await daiContract.approve(token.address, secondProduct.price, { from: user1 });
         await assertRevert(
           token.purchase(secondProduct.id, 2, user1, ZERO_ADDRESS, {
             from: user1,
-            value: secondProduct.price
+            // value: secondProduct.price
           })
         );
       });
       it('should not sell a subscription for a value more than the number of cycles requires', async () => {
+        await daiContract.approve(token.address, secondProduct.price * 2 + 1, { from: user1 });
         await assertRevert(
           token.purchase(secondProduct.id, 2, user1, ZERO_ADDRESS, {
             from: user1,
