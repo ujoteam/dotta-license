@@ -92,7 +92,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
       _purchaseAmount);
     if(affiliateCut > 0) {
       require(affiliateCut < _purchaseAmount);
-      affiliateProgram.credit.value(affiliateCut)(_affiliate, _licenseId);
+      affiliateProgram.credit(_affiliate, _licenseId, affiliateCut);
     }
   }
 
@@ -190,7 +190,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     whenNotPaused
     returns (uint256)
   {
-    require(daiContract != 0, "LicenseSale.purchase(): DAI contract address is unset");
+    require(address(daiContract) != address(0), "LicenseSale.purchase(): DAI contract address is unset");
     require(_productId != 0, "LicenseSale.purchase(): productID must be non-zero");
     require(_numCycles != 0, "LicenseSale.purchase(): numCycles must be non-zero");
     require(_assignee != address(0), "LicenseSale.purchase(): assignee must be non-zero");
@@ -200,8 +200,8 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     // accurate. No more, no less.
     // require(msg.value == costForProductCycles(_productId, _numCycles));
     uint256 cost = costForProductCycles(_productId, _numCycles);
-    require(daiContract.allowance(msg.sender, this) >= cost, "LicenseSale.purchase(): not enough DAI");
-    bool ok = daiContract.transferFrom(msg.sender, this, cost);
+    require(daiContract.allowance(msg.sender, address(this)) >= cost, "LicenseSale.purchase(): not enough DAI");
+    bool ok = daiContract.transferFrom(msg.sender, address(this), cost);
     require(ok, "LicenseSale.purchase(): DAI transfer failed");
 
     // Non-subscription products should send a _numCycle of 1 -- you can't buy a
@@ -213,7 +213,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     // this can, of course, be gamed by malicious miners. But it's adequate for our application
     // Feel free to add your own strategies for product attributes
     // solium-disable-next-line security/no-block-members, zeppelin/no-arithmetic-operations
-    uint256 attributes = uint256(keccak256(abi.encodePacked(block.blockhash(block.number-1))))^_productId^(uint256(_assignee));
+    uint256 attributes = uint256(keccak256(abi.encodePacked(blockhash(block.number-1))))^_productId^(uint256(_assignee));
     uint256 licenseId = _performPurchase(
       _productId,
       _numCycles,
@@ -254,8 +254,8 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
 
     // Transfer the DAI
     uint256 renewalCost = costForProductCycles(productId, _numCycles);
-    require(daiContract.allowance(msg.sender, this) >= renewalCost, "LicenseSale.renew(): not enough DAI");
-    bool ok = daiContract.transferFrom(msg.sender, this, renewalCost);
+    require(daiContract.allowance(msg.sender, address(this)) >= renewalCost, "LicenseSale.renew(): not enough DAI");
+    bool ok = daiContract.transferFrom(msg.sender, address(this), renewalCost);
     require(ok, "LicenseSale.renew(): DAI transfer failed");
 
     _performRenewal(_tokenId, _numCycles);
