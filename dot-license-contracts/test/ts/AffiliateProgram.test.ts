@@ -67,8 +67,9 @@ contract('AffiliateProgram', (accounts: string[]) => {
 
   const purchase = async (product: any, user: any, opts: any = {}) => {
     const affiliate = opts.affiliate || ZERO_ADDRESS;
+    await daiContract.approve(token.address, product.price)
     const { logs } = await token.purchase(product.id, 1, user, affiliate, {
-      value: product.price,
+      // value: product.price,
       gasPrice: 0
     });
     const issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -306,9 +307,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
         let logs: any;
 
         beforeEach(async () => {
-          const result = await affiliate.credit(affiliate1, purchaseId, {
+          await daiContract.approve(token.address, valueAmount, { from: creator })
+          const result = await affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: creator,
-            value: valueAmount
+            // value: valueAmount
           });
           logs = result.logs;
         });
@@ -316,9 +318,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
           (await affiliate.balances(affiliate1)).should.be.bignumber.equal(
             valueAmount
           );
-          await affiliate.credit(affiliate1, purchaseId, {
+          await daiContract.approve(token.address, valueAmount, { from: creator })
+          await affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: creator,
-            value: valueAmount
+            // value: valueAmount
           });
           (await affiliate.balances(affiliate1)).should.be.bignumber.equal(
             valueAmount * 2
@@ -343,35 +346,39 @@ contract('AffiliateProgram', (accounts: string[]) => {
       });
 
       it('should not allow deposits when paused', async () => {
+        await daiContract.approve(token.address, valueAmount, { from: creator })
         await affiliate.pause({ from: creator });
         await assertRevert(
-          affiliate.credit(affiliate1, purchaseId, {
+          affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: creator,
-            value: valueAmount
+            // value: valueAmount
           })
         );
       });
       it('should not allow deposits from a rando', async () => {
+        await daiContract.approve(token.address, valueAmount, { from: user1 })
         await assertRevert(
-          affiliate.credit(affiliate1, purchaseId, {
+          affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: user1,
-            value: valueAmount
+            // value: valueAmount
           })
         );
       });
       it('should not allow deposits without a value', async () => {
+        await daiContract.approve(token.address, 0, { from: creator })
         await assertRevert(
-          affiliate.credit(affiliate1, purchaseId, {
+          affiliate.credit(affiliate1, purchaseId, 0, {
             from: creator,
-            value: 0
+            // value: 0
           })
         );
       });
       it('should not allow deposits to an affiliate with a zero address', async () => {
+        await daiContract.approve(token.address, valueAmount, { from: creator })
         await assertRevert(
-          affiliate.credit(ZERO_ADDRESS, purchaseId, {
+          affiliate.credit(ZERO_ADDRESS, purchaseId, valueAmount, {
             from: creator,
-            value: valueAmount
+            // value: valueAmount
           })
         );
       });
@@ -387,14 +394,16 @@ contract('AffiliateProgram', (accounts: string[]) => {
         let originalAccountBalance1: any;
         let originalAccountBalance2: any;
         beforeEach(async () => {
-          await affiliate.credit(affiliate1, purchaseId1, {
+          await daiContract.approve(token.address, valueAf1, { from: creator })
+          await affiliate.credit(affiliate1, purchaseId1, valueAf1 {
             from: creator,
-            value: valueAf1
+            // value: valueAf1
           });
 
-          await affiliate.credit(affiliate2, purchaseId2, {
+          await daiContract.approve(token.address, valueAf2, { from: creator })
+          await affiliate.credit(affiliate2, purchaseId2, valueAf2, {
             from: creator,
-            value: valueAf2
+            // value: valueAf2
           });
 
           // the affiliate balances are credited
@@ -594,9 +603,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
       );
       await assertDoesNotOwn(user3, secondProduct.id);
 
+      await daiContract.approve(token.address, secondProduct.price, { from: user3 })
       await token.purchase(secondProduct.id, 1, user3, affiliate1, {
         from: user3,
-        value: secondProduct.price,
+        // value: secondProduct.price,
         gasPrice: 0
       });
       const newLicenseBalance = await web3Eth.getBalanceAsync(token.address);
@@ -643,9 +653,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertDoesNotOwn(user3, secondProduct.id);
 
           // make a purchase
+          await daiContract.approve(token.address, secondProduct.price, { from: user3 })
           await token.purchase(secondProduct.id, 1, user3, affiliate1, {
             from: user3,
-            value: secondProduct.price,
+            // value: secondProduct.price,
             gasPrice: 0
           });
 
@@ -658,9 +669,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertDoesNotOwn(user3, secondProduct.id);
 
           // make a purchase
+          await daiContract.approve(token.address, secondProduct.price, { from: user3 })
           await token.purchase(secondProduct.id, 1, user3, ZERO_ADDRESS, {
             from: user3,
-            value: secondProduct.price,
+            // value: secondProduct.price,
             gasPrice: 0
           });
 
@@ -685,9 +697,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertDoesNotOwn(user3, secondProduct.id);
 
           // make a purchase
+          await daiContract.approve(token.address, secondProduct.price, { from: user3 })
           await token.purchase(secondProduct.id, 1, user3, affiliate1, {
             from: user3,
-            value: secondProduct.price,
+            // value: secondProduct.price,
             gasPrice: 0
           });
 
@@ -729,9 +742,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertDoesNotOwn(user3, secondProduct.id);
 
           // make a purchase
+          await daiContract.approve(token.address, secondProduct.price, { from: user3 })
           await token.purchase(secondProduct.id, 1, user3, affiliate1, {
             from: user3,
-            value: secondProduct.price,
+            // value: secondProduct.price,
             gasPrice: 0
           });
 
@@ -808,9 +822,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
             await assertOwns(user1, secondProduct.id);
 
             // make a renewal
+            await daiContract.approve(token.address, secondProduct.price, { from: user3 })
             await token.renew(tokenId, 1, {
               from: user3,
-              value: secondProduct.price,
+              // value: secondProduct.price,
               gasPrice: 0
             });
 
@@ -852,9 +867,10 @@ contract('AffiliateProgram', (accounts: string[]) => {
             await assertOwns(user1, secondProduct.id);
 
             // make a renewal
+            await daiContract.approve(token.address, secondProduct.price, { from: user3 })
             await token.renew(tokenId, 1, {
               from: user3,
-              value: secondProduct.price,
+              // value: secondProduct.price,
               gasPrice: 0
             });
 
