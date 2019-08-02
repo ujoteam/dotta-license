@@ -70,9 +70,9 @@ contract('LicenseSale', (accounts: string[]) => {
     // Set DAI contract
     daiContract = await ERC20.new({ from: owner });
     await token.setDAIContract(daiContract.address, { from: owner });
-    await daiContract.transfer(user1, 100000, { from: owner })
-    await daiContract.transfer(user2, 100000, { from: owner })
-    await daiContract.transfer(user3, 100000, { from: owner })
+    await daiContract.transfer(user1, 100000, { from: owner });
+    await daiContract.transfer(user2, 100000, { from: owner });
+    await daiContract.transfer(user3, 100000, { from: owner });
 
     p1Created = await token.createProduct(
       firstProduct.id,
@@ -215,13 +215,15 @@ contract('LicenseSale', (accounts: string[]) => {
       let tokenId: any;
       let issuedEvent: any;
       beforeEach(async () => {
+        let test = await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         const { logs } = await token.purchase(
           firstProduct.id,
           1,
           user1,
           ZERO_ADDRESS,
           {
-            value: firstProduct.price
+            from: user1
+            // value: firstProduct.price
           }
         );
         issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -300,13 +302,15 @@ contract('LicenseSale', (accounts: string[]) => {
       let tokenId: any;
       let issuedEvent: any;
       beforeEach(async () => {
+        await daiContract.approve(token.address, secondProduct.price, { from: user1 });
         const { logs } = await token.purchase(
           secondProduct.id,
           1,
           user1,
           ZERO_ADDRESS,
           {
-            value: secondProduct.price
+            from: user1
+            // value: secondProduct.price
           }
         );
         issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -320,13 +324,15 @@ contract('LicenseSale', (accounts: string[]) => {
         actualTime.should.be.bignumber.equal(expectedTime);
       });
       it('should allow buying for multiple cycles', async () => {
+        await daiContract.approve(token.address, thirdProduct.price * 3, { from: user1 });
         const { logs } = await token.purchase(
           thirdProduct.id,
           3,
           user1,
           ZERO_ADDRESS,
           {
-            value: thirdProduct.price * 3
+            from: user1
+            // value: thirdProduct.price * 3
           }
         );
         issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -352,9 +358,10 @@ contract('LicenseSale', (accounts: string[]) => {
     });
     describe('if the owner is creating it', async () => {
       it('should not allow violation of the total inventory', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user3 });
         await token.purchase(firstProduct.id, 1, user3, ZERO_ADDRESS, {
           from: user3,
-          value: firstProduct.price
+          // value: firstProduct.price
         });
         await token.createPromotionalPurchase(firstProduct.id, 1, user3, 0, {
           from: owner
@@ -366,6 +373,7 @@ contract('LicenseSale', (accounts: string[]) => {
         );
       });
       it('should not allow violation of the total supply', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user3 });
         await token.purchase(firstProduct.id, 1, user3, ZERO_ADDRESS, {
           from: user3,
           value: firstProduct.price
@@ -404,13 +412,15 @@ contract('LicenseSale', (accounts: string[]) => {
     let tokenId: any;
     let issuedEvent: any;
     beforeEach(async () => {
+      await daiContract.approve(token.address, secondProduct.price, { from: user1 });
       const { logs } = await token.purchase(
         secondProduct.id,
         1,
         user1,
         ZERO_ADDRESS,
         {
-          value: secondProduct.price
+          from: user1
+          // value: secondProduct.price
         }
       );
       issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -419,36 +429,44 @@ contract('LicenseSale', (accounts: string[]) => {
 
     describe('it fails because', async () => {
       it('should not allow zero cycles', async () => {
+        await daiContract.approve(token.address, secondProduct.price, { from: user1 });
         await assertRevert(
           token.renew(tokenId, 0, {
-            value: secondProduct.price
+            from: user1
+            // value: secondProduct.price
           })
         );
       });
 
       it('should require that the token has an owner', async () => {
+        await daiContract.approve(token.address, secondProduct.price, { from: user1 });
         await assertRevert(
           token.renew(100, 1, {
-            value: secondProduct.price
+            from: user1
+            // value: secondProduct.price
           })
         );
       });
       it('should not allow renewing a non-subscription product', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         const { logs } = await token.purchase(
           firstProduct.id,
           1,
           user1,
           ZERO_ADDRESS,
           {
-            value: firstProduct.price
+            from: user1
+            // value: firstProduct.price
           }
         );
         const issuedEvent = eventByName(logs, 'LicenseIssued');
         const tokenId = issuedEvent.args.licenseId;
 
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         await assertRevert(
           token.renew(tokenId, 1, {
-            value: firstProduct.price
+            from: user1
+            // value: firstProduct.price
           })
         );
       });
@@ -462,24 +480,30 @@ contract('LicenseSale', (accounts: string[]) => {
         });
 
         it('should not allow renewing a non-renewable product', async () => {
+          await daiContract.approve(token.address, secondProduct.price, { from: user1 });
           await assertRevert(
             token.renew(tokenId, 1, {
-              value: secondProduct.price
+              from: user1
+              // value: secondProduct.price
             })
           );
         });
       });
       it('should not allow an underpaid value', async () => {
+        await daiContract.approve(token.address, secondProduct.price * 2 - 1, { from: user1 });
         await assertRevert(
           token.renew(tokenId, 2, {
-            value: secondProduct.price * 2 - 1
+            from: user1
+            // value: secondProduct.price * 2 - 1
           })
         );
       });
       it('should not allow an overpaid value', async () => {
+        await daiContract.approve(token.address, secondProduct.price * 2 - 1, { from: user1 });
         await assertRevert(
           token.renew(tokenId, 2, {
-            value: secondProduct.price * 2 + 1
+            from: user1
+            // value: secondProduct.price * 2 + 1
           })
         );
       });
@@ -488,9 +512,11 @@ contract('LicenseSale', (accounts: string[]) => {
           await token.pause({ from: owner });
         });
         it('should not work', async () => {
+          await daiContract.approve(token.address, secondProduct.price * 2, { from: user1 });
           await assertRevert(
             token.renew(tokenId, 2, {
-              value: secondProduct.price * 2
+              // value: secondProduct.price * 2
+              from: user1
             })
           );
         });
@@ -509,9 +535,11 @@ contract('LicenseSale', (accounts: string[]) => {
         });
 
         it('should renew from now forward', async () => {
+          await daiContract.approve(token.address, secondProduct.price * 2, { from: user1 });
           let now = await latestTime();
           await token.renew(tokenId, 2, {
-            value: secondProduct.price * 2
+            // value: secondProduct.price * 2
+            from: user1
           });
           const expectedExpirationTime = new BigNumber(now).plus(
             secondProduct.interval * 2
@@ -530,8 +558,11 @@ contract('LicenseSale', (accounts: string[]) => {
         beforeEach(async () => {
           originalExpirationTime = await token.licenseExpirationTime(tokenId);
           originalExpirationTime.should.be.bignumber.greaterThan(0);
+
+          await daiContract.approve(token.address, secondProduct.price * 2, { from: user1 });
           await token.renew(tokenId, 2, {
-            value: secondProduct.price * 2
+            from: user1
+            // value: secondProduct.price * 2
           });
         });
 
@@ -552,8 +583,10 @@ contract('LicenseSale', (accounts: string[]) => {
           secondProduct.interval * 2
         );
 
+        await daiContract.approve(token.address, secondProduct.price * 2, { from: user1 });
         const { logs } = await token.renew(tokenId, 2, {
-          value: secondProduct.price * 2
+          // value: secondProduct.price * 2
+          from: user1
         });
 
         const renewalEvent = eventByName(logs, 'LicenseRenewal');
@@ -569,13 +602,15 @@ contract('LicenseSale', (accounts: string[]) => {
   describe('when renewing a promotional subscription', async () => {
     describe('and an admin is sending', async () => {
       it('should not allow renewing a non-subscription product', async () => {
+        await daiContract.approve(token.address, firstProduct.price, { from: user1 });
         const { logs } = await token.purchase(
           firstProduct.id,
           1,
           user1,
           ZERO_ADDRESS,
           {
-            value: firstProduct.price
+            from: user1
+            // value: firstProduct.price
           }
         );
         const issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -587,13 +622,15 @@ contract('LicenseSale', (accounts: string[]) => {
       describe('and the product is a subscription product', async () => {
         let tokenId: any;
         beforeEach(async () => {
+          await daiContract.approve(token.address, secondProduct.price, { from: user1 });
           const { logs } = await token.purchase(
             secondProduct.id,
             1,
             user1,
             ZERO_ADDRESS,
             {
-              value: secondProduct.price
+              from: user1
+              // value: secondProduct.price
             }
           );
           const issuedEvent = eventByName(logs, 'LicenseIssued');
@@ -642,13 +679,15 @@ contract('LicenseSale', (accounts: string[]) => {
     describe('and a rando is sending', async () => {
       let tokenId: any;
       beforeEach(async () => {
+        await daiContract.approve(token.address, secondProduct.price, { from: user1 });
         const { logs } = await token.purchase(
           secondProduct.id,
           1,
           user1,
           ZERO_ADDRESS,
           {
-            value: secondProduct.price
+            from: user1
+            // value: secondProduct.price
           }
         );
         const issuedEvent = eventByName(logs, 'LicenseIssued');

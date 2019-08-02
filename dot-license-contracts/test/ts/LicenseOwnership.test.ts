@@ -63,6 +63,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
     // Set DAI contract
     daiContract = await ERC20.new({ from: owner });
     token.setDAIContract(daiContract.address, { from: owner });
+    await daiContract.transfer(user1, 100000, { from: owner });
+    await daiContract.transfer(user2, 100000, { from: owner });
+    await daiContract.transfer(user3, 100000, { from: owner });
 
     await token.createProduct(
       firstProduct.id,
@@ -84,19 +87,22 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
     await token.setTokenMetadataBaseURI('http://localhost/', { from: owner });
 
+    await daiContract.approve(token.address, firstProduct.price, { from: user1 });
     await token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
       from: user1,
-      value: firstProduct.price
+      // value: firstProduct.price
     });
 
+    await daiContract.approve(token.address, firstProduct.price, { from: user1 });
     await token.purchase(firstProduct.id, 1, user1, ZERO_ADDRESS, {
       from: user1,
-      value: firstProduct.price
+      // value: firstProduct.price
     });
 
+    await daiContract.approve(token.address, secondProduct.price, { from: user2 });
     await token.purchase(secondProduct.id, 1, user2, ZERO_ADDRESS, {
-      from: user1,
-      value: secondProduct.price
+      from: user2,
+      // value: secondProduct.price
     });
   });
 
@@ -173,6 +179,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
         it('mints the given token ID to the given address', async () => {
           const previousBalance = await token.balanceOf(to);
 
+          await daiContract.approve(token.address, secondProduct.price, { from: to });
           const { logs } = await token.purchase(
             secondProduct.id,
             1,
@@ -180,7 +187,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             ZERO_ADDRESS,
             {
               from: to,
-              value: secondProduct.price
+              // value: secondProduct.price
             }
           );
           const transferEvent = eventByName(logs, 'Transfer');
@@ -194,6 +201,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
         });
 
         it('adds that token to the token list of the owner', async () => {
+          await daiContract.approve(token.address, secondProduct.price, { from: user1 });
           const { logs } = await token.purchase(
             secondProduct.id,
             1,
@@ -201,7 +209,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             ZERO_ADDRESS,
             {
               from: user1,
-              value: secondProduct.price
+              // value: secondProduct.price
             }
           );
           const transferEvent = eventByName(logs, 'Transfer');
@@ -213,6 +221,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
         });
 
         it('emits a transfer event', async () => {
+          await daiContract.approve(token.address, secondProduct.price, { from: user1 });
           const { logs } = await token.purchase(
             secondProduct.id,
             1,
@@ -220,7 +229,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             ZERO_ADDRESS,
             {
               from: user1,
-              value: secondProduct.price
+              // value: secondProduct.price
             }
           );
 
@@ -236,10 +245,11 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
         const to = ZERO_ADDRESS;
 
         it('reverts', async () => {
+          await daiContract.approve(token.address, secondProduct.price, { from: user1 });
           await assertRevert(
             token.purchase(secondProduct.id, 1, to, ZERO_ADDRESS, {
               from: user1,
-              value: secondProduct.price
+              // value: secondProduct.price
             })
           );
         });
@@ -283,16 +293,15 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             });
 
             logs.length.should.be.equal(2);
-
             logs[0].event.should.be.eq('Approval');
-            logs[0].args._owner.should.be.equal(sender);
-            logs[0].args._approved.should.be.equal(ZERO_ADDRESS);
-            logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+            logs[0].args.owner.should.be.equal(sender);
+            logs[0].args.approved.should.be.equal(ZERO_ADDRESS);
+            logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
 
             logs[1].event.should.be.eq('Transfer');
-            logs[1].args._from.should.be.equal(sender);
-            logs[1].args._to.should.be.equal(to);
-            logs[1].args._tokenId.should.be.bignumber.equal(tokenId);
+            logs[1].args.from.should.be.equal(sender);
+            logs[1].args.to.should.be.equal(to);
+            logs[1].args.tokenId.should.be.bignumber.equal(tokenId);
           });
 
           it('adjusts owners balances', async () => {
@@ -403,9 +412,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
               logs.length.should.be.equal(1);
               logs[0].event.should.be.eq('Approval');
-              logs[0].args._owner.should.be.equal(sender);
-              logs[0].args._approved.should.be.equal(to);
-              logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+              logs[0].args.owner.should.be.equal(sender);
+              logs[0].args.approved.should.be.equal(to);
+              logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
             });
           });
         });
@@ -429,9 +438,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
                 logs.length.should.be.equal(1);
                 logs[0].event.should.be.eq('Approval');
-                logs[0].args._owner.should.be.equal(sender);
-                logs[0].args._approved.should.be.equal(to);
-                logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+                logs[0].args.owner.should.be.equal(sender);
+                logs[0].args.approved.should.be.equal(to);
+                logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
               });
             });
 
@@ -454,9 +463,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
                 logs.length.should.be.equal(1);
                 logs[0].event.should.be.eq('Approval');
-                logs[0].args._owner.should.be.equal(sender);
-                logs[0].args._approved.should.be.equal(to);
-                logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+                logs[0].args.owner.should.be.equal(sender);
+                logs[0].args.approved.should.be.equal(to);
+                logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
               });
             });
 
@@ -479,9 +488,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
                 logs.length.should.be.equal(1);
                 logs[0].event.should.be.eq('Approval');
-                logs[0].args._owner.should.be.equal(sender);
-                logs[0].args._approved.should.be.equal(to);
-                logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+                logs[0].args.owner.should.be.equal(sender);
+                logs[0].args.approved.should.be.equal(to);
+                logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
               });
             });
           });
@@ -539,9 +548,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
         approvalEvent = eventByName(logs, 'ApprovalForAll');
       });
       it('should emit an ApprovalForAll event', async () => {
-        approvalEvent.args._owner.should.be.equal(user1);
-        approvalEvent.args._operator.should.be.equal(operator);
-        approvalEvent.args._approved.should.be.true();
+        approvalEvent.args.owner.should.be.equal(user1);
+        approvalEvent.args.operator.should.be.equal(operator);
+        approvalEvent.args.approved.should.be.true();
       });
       describe('and the operator is the sender', async () => {
         const sender = operator;
@@ -579,9 +588,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             approvalEvent = eventByName(logs, 'ApprovalForAll');
           });
           it('should emit an ApprovalForAll event', async () => {
-            approvalEvent.args._owner.should.be.equal(user1);
-            approvalEvent.args._operator.should.be.equal(operator);
-            approvalEvent.args._approved.should.be.false();
+            approvalEvent.args.owner.should.be.equal(user1);
+            approvalEvent.args.operator.should.be.equal(operator);
+            approvalEvent.args.approved.should.be.false();
           });
           it('should not allow the operator to takeOwnership', async () => {
             await assertRevert(
@@ -677,14 +686,14 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
           logs.length.should.be.equal(2);
 
           logs[0].event.should.be.eq('Approval');
-          logs[0].args._owner.should.be.equal(approver);
-          logs[0].args._approved.should.be.equal(ZERO_ADDRESS);
-          logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+          logs[0].args.owner.should.be.equal(approver);
+          logs[0].args.approved.should.be.equal(ZERO_ADDRESS);
+          logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
 
           logs[1].event.should.be.eq('Transfer');
-          logs[1].args._from.should.be.equal(approver);
-          logs[1].args._to.should.be.equal(sender);
-          logs[1].args._tokenId.should.be.bignumber.equal(tokenId);
+          logs[1].args.from.should.be.equal(approver);
+          logs[1].args.to.should.be.equal(sender);
+          logs[1].args.tokenId.should.be.bignumber.equal(tokenId);
         });
 
         it('adjusts owners balances', async () => {
@@ -748,6 +757,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
 
   describe('when checking token metadata', async () => {
     beforeEach(async () => {
+      await daiContract.approve(token.address, secondProduct.price, { from: user1 });
       await token.purchase(secondProduct.id, 1, user1, ZERO_ADDRESS, {
         from: user1,
         value: secondProduct.price

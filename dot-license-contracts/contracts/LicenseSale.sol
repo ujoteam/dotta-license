@@ -201,7 +201,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     // accurate. No more, no less.
     // require(msg.value == costForProductCycles(_productId, _numCycles));
     uint256 cost = costForProductCycles(_productId, _numCycles);
-    require(daiContract.allowance(msg.sender, address(this)) >= cost, "LicenseSale.purchase(): not enough DAI");
+    require(daiContract.allowance(msg.sender, address(this)) == cost, "LicenseSale.purchase(): not enough DAI");
     bool ok = daiContract.transferFrom(msg.sender, address(this), cost);
     require(ok, "LicenseSale.purchase(): DAI transfer failed");
 

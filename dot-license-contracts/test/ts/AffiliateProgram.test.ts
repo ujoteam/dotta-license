@@ -395,7 +395,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
         let originalAccountBalance2: any;
         beforeEach(async () => {
           await daiContract.approve(token.address, valueAf1, { from: creator })
-          await affiliate.credit(affiliate1, purchaseId1, valueAf1 {
+          await affiliate.credit(affiliate1, purchaseId1, valueAf1, {
             from: creator,
             // value: valueAf1
           });
