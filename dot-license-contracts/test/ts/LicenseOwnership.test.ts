@@ -190,9 +190,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
               // value: secondProduct.price
             }
           );
-          const transferEvent = eventByName(logs, 'Transfer');
-          const tokenId = transferEvent.args._tokenId;
 
+          const transferEvent = eventByName(logs, 'Transfer');
+          const tokenId = transferEvent.args.tokenId;
           const owner = await token.ownerOf(tokenId);
 
           owner.should.be.equal(to);
@@ -213,7 +213,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             }
           );
           const transferEvent = eventByName(logs, 'Transfer');
-          const tokenId = transferEvent.args._tokenId;
+          const tokenId = transferEvent.args.tokenId;
 
           const tokens = await token.tokensOf(user3);
           tokens.length.should.be.equal(1);
@@ -233,11 +233,14 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
             }
           );
 
-          logs.length.should.be.equal(2);
-          logs[1].event.should.be.eq('Transfer');
-          logs[1].args._from.should.be.equal(ZERO_ADDRESS);
-          logs[1].args._to.should.be.equal(to);
-          // logs[0].args._tokenId.should.be.bignumber.equal(tokenId);
+          const transferEvent = eventByName(logs, 'Transfer');
+          const tokenId = transferEvent.args.tokenId;
+
+          logs.length.should.be.equal(4);
+          logs[0].event.should.be.eq('Transfer');
+          logs[3].args.from.should.be.equal(ZERO_ADDRESS);
+          logs[3].args.to.should.be.equal(to);
+          logs[0].args.tokenId.should.be.bignumber.equal(tokenId);
         });
       });
 

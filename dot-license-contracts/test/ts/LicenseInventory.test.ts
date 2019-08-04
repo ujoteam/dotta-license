@@ -249,6 +249,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       const { logs } = await token.setPrice(secondProduct.id, 1234567, {
         from: owner
       });
+
       logs.length.should.be.equal(1);
       logs[0].event.should.be.eq('ProductPriceChanged');
       logs[0].args.productId.should.be.bignumber.equal(secondProduct.id);
