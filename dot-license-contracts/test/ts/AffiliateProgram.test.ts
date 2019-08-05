@@ -83,6 +83,9 @@ contract('AffiliateProgram', (accounts: string[]) => {
     // Set DAI contract
     daiContract = await ERC20.new({ from: creator });
     token.setDAIContract(daiContract.address, { from: creator });
+    await daiContract.transfer(user1, 100000, { from: creator });
+    await daiContract.transfer(user2, 100000, { from: creator });
+    await daiContract.transfer(user3, 100000, { from: creator });
 
     await token.createProduct(
       firstProduct.id,

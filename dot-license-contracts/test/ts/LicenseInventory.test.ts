@@ -237,7 +237,7 @@ contract('LicenseInventory', (accounts: string[]) => {
       (await token.priceOf(secondProduct.id)).should.be.bignumber.equal(
         secondProduct.price
       );
-      token.setPrice(secondProduct.id, 1234567, { from: owner });
+      await token.setPrice(secondProduct.id, 1234567, { from: owner });
       (await token.priceOf(secondProduct.id)).should.be.bignumber.equal(
         1234567
       );

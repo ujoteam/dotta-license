@@ -212,9 +212,9 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
               // value: secondProduct.price
             }
           );
-          const transferEvent = eventByName(logs, 'Transfer');
-          const tokenId = transferEvent.args.tokenId;
 
+          const transferEvent = logs[3]
+          const tokenId = transferEvent.args.tokenId;
           const tokens = await token.tokensOf(user3);
           tokens.length.should.be.equal(1);
           tokens[0].should.be.bignumber.equal(tokenId);
@@ -799,7 +799,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
   describe('safeTransferFrom', async () => {
     let tokenReceiver: any;
     beforeEach(async () => {
-      tokenReceiver = await MockTokenReceiver.new({ from: creator });
+      tokenReceiver = await MockTokenReceiver.new({ from: owner });
     });
     describe('when the sender is the owner', async () => {
       const sender = user1;

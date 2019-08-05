@@ -341,7 +341,7 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
       bytes4 tokenReceiverResponse = ERC721Receiver(_to).onERC721Received.gas(50000)(
         msg.sender, _from, _tokenId, _data
       );
-      require(tokenReceiverResponse == bytes4(keccak256("onERC721Received(address,uint256,bytes)")), "LicenseOwnership.safeTransferFrom(): bad response from ERC721 token receiver");
+      require(tokenReceiverResponse == bytes4(keccak256("onERC721Received(address,address,uint256,bytes)")), "LicenseOwnership.safeTransferFrom(): bad response from ERC721 token receiver");
     }
   }
 
