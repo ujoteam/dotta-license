@@ -210,6 +210,7 @@ contract AffiliateProgram is Pausable, DAITransactor {
     require(daiContract.allowance(msg.sender, address(this)) >= value, "AffiliateProgram.credit(): not enough DAI");
     require(_affiliate != address(0), "AffiliateProgram.credit(): affiliate must be non-zero");
 
+
     bool ok = daiContract.transferFrom(msg.sender, address(this), value);
     require(ok, "AffiliateProgram.credit(): DAI transfer failed");
     balances[_affiliate] += value;

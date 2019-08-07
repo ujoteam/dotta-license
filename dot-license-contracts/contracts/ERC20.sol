@@ -37,7 +37,7 @@ contract ERC20 is IERC20 {
     uint256 private _totalSupply;
 
     constructor() public {
-        _mint(msg.sender, 10000000000);
+        _mint(msg.sender, 10000000000000);
     }
 
     /**

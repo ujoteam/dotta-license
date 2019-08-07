@@ -27,7 +27,7 @@ chai.should();
 const web3: Web3 = (global as any).web3;
 const web3Eth: any = Bluebird.promisifyAll(web3.eth);
 
-contract('AffiliateProgram', (accounts: string[]) => {
+contract.only('AffiliateProgram', (accounts: string[]) => {
   let token: any = null;
   let daiContract: any = null;
   let affiliate: any = null;
@@ -82,10 +82,12 @@ contract('AffiliateProgram', (accounts: string[]) => {
 
     // Set DAI contract
     daiContract = await ERC20.new({ from: creator });
-    token.setDAIContract(daiContract.address, { from: creator });
+    await token.setDAIContract(daiContract.address, { from: creator });
     await daiContract.transfer(user1, 100000, { from: creator });
     await daiContract.transfer(user2, 100000, { from: creator });
     await daiContract.transfer(user3, 100000, { from: creator });
+    await daiContract.transfer(user4, 100000, { from: creator });
+    await daiContract.transfer(user5, 100000, { from: creator });
 
     await token.createProduct(
       firstProduct.id,
@@ -109,6 +111,16 @@ contract('AffiliateProgram', (accounts: string[]) => {
     await token.setAffiliateProgramAddress(affiliate.address, {
       from: creator
     });
+
+    // Set DAI contract
+    daiContract = await ERC20.new({ from: creator });
+    affiliate.setDAIContract(daiContract.address, { from: creator });
+    await daiContract.transfer(user1, 100000, { from: creator });
+    await daiContract.transfer(user2, 100000, { from: creator });
+    await daiContract.transfer(user3, 100000, { from: creator });
+    await daiContract.transfer(user4, 100000, { from: creator });
+    await daiContract.transfer(user5, 100000, { from: creator });
+
     await affiliate.unpause({ from: creator });
   });
 
@@ -305,12 +317,12 @@ contract('AffiliateProgram', (accounts: string[]) => {
 
     describe('when making deposits for affiliates', async () => {
       const purchaseId = 1;
-      const valueAmount = 12345;
+      const valueAmount = 1;
       describe('in a valid way', async () => {
         let logs: any;
 
         beforeEach(async () => {
-          await daiContract.approve(token.address, valueAmount, { from: creator })
+          await daiContract.approve(affiliate.address, valueAmount, { from: creator });
           const result = await affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: creator,
             // value: valueAmount
@@ -321,7 +333,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
           (await affiliate.balances(affiliate1)).should.be.bignumber.equal(
             valueAmount
           );
-          await daiContract.approve(token.address, valueAmount, { from: creator })
+          await daiContract.approve(affiliate.address, valueAmount, { from: creator })
           await affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: creator,
             // value: valueAmount
@@ -349,7 +361,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
       });
 
       it('should not allow deposits when paused', async () => {
-        await daiContract.approve(token.address, valueAmount, { from: creator })
+        await daiContract.approve(affiliate.address, valueAmount, { from: creator })
         await affiliate.pause({ from: creator });
         await assertRevert(
           affiliate.credit(affiliate1, purchaseId, valueAmount, {
@@ -359,7 +371,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
         );
       });
       it('should not allow deposits from a rando', async () => {
-        await daiContract.approve(token.address, valueAmount, { from: user1 })
+        await daiContract.approve(affiliate.address, valueAmount, { from: user1 })
         await assertRevert(
           affiliate.credit(affiliate1, purchaseId, valueAmount, {
             from: user1,
@@ -367,17 +379,8 @@ contract('AffiliateProgram', (accounts: string[]) => {
           })
         );
       });
-      it('should not allow deposits without a value', async () => {
-        await daiContract.approve(token.address, 0, { from: creator })
-        await assertRevert(
-          affiliate.credit(affiliate1, purchaseId, 0, {
-            from: creator,
-            // value: 0
-          })
-        );
-      });
       it('should not allow deposits to an affiliate with a zero address', async () => {
-        await daiContract.approve(token.address, valueAmount, { from: creator })
+        await daiContract.approve(affiliate.address, valueAmount, { from: creator })
         await assertRevert(
           affiliate.credit(ZERO_ADDRESS, purchaseId, valueAmount, {
             from: creator,
@@ -397,13 +400,13 @@ contract('AffiliateProgram', (accounts: string[]) => {
         let originalAccountBalance1: any;
         let originalAccountBalance2: any;
         beforeEach(async () => {
-          await daiContract.approve(token.address, valueAf1, { from: creator })
+          await daiContract.approve(affiliate.address, valueAf1, { from: creator })
           await affiliate.credit(affiliate1, purchaseId1, valueAf1, {
             from: creator,
             // value: valueAf1
           });
 
-          await daiContract.approve(token.address, valueAf2, { from: creator })
+          await daiContract.approve(affiliate.address, valueAf2, { from: creator })
           await affiliate.credit(affiliate2, purchaseId2, valueAf2, {
             from: creator,
             // value: valueAf2
@@ -602,7 +605,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
   describe('when making a sale', async () => {
     const assertPurchaseWorks = async () => {
       const originalLicenseBalance = await web3Eth.getBalanceAsync(
-        token.address
+        affiliate.address
       );
       await assertDoesNotOwn(user3, secondProduct.id);
 
@@ -612,7 +615,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
         // value: secondProduct.price,
         gasPrice: 0
       });
-      const newLicenseBalance = await web3Eth.getBalanceAsync(token.address);
+      const newLicenseBalance = await web3Eth.getBalanceAsync(affiliate.address);
       newLicenseBalance.should.be.bignumber.equal(
         originalLicenseBalance.add(secondProduct.price)
       );
@@ -711,7 +714,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertOwns(user3, secondProduct.id);
 
           const newLicenseBalance = await web3Eth.getBalanceAsync(
-            token.address
+            affiliate.address
           );
 
           newLicenseBalance.should.be.bignumber.equal(
@@ -737,7 +740,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
         it('should give the affiliate her credit', async () => {
           // check original balances
           const originalLicenseBalance = await web3Eth.getBalanceAsync(
-            token.address
+            affiliate.address
           );
           const originalAffiliateBalance = await web3Eth.getBalanceAsync(
             affiliate.address
@@ -756,7 +759,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertOwns(user3, secondProduct.id);
 
           const newLicenseBalance = await web3Eth.getBalanceAsync(
-            token.address
+            affiliate.address
           );
 
           newLicenseBalance.should.be.bignumber.equal(
@@ -817,7 +820,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
           it('should give the affiliate his credit', async () => {
             // check original balances
             const originalLicenseBalance = await web3Eth.getBalanceAsync(
-              token.address
+              affiliate.address
             );
             const originalAffiliateBalance = await web3Eth.getBalanceAsync(
               affiliate.address
@@ -825,7 +828,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
             await assertOwns(user1, secondProduct.id);
 
             // make a renewal
-            await daiContract.approve(token.address, secondProduct.price, { from: user3 })
+            await daiContract.approve(affiliate.address, secondProduct.price, { from: user3 })
             await token.renew(tokenId, 1, {
               from: user3,
               // value: secondProduct.price,
@@ -833,7 +836,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
             });
 
             const newLicenseBalance = await web3Eth.getBalanceAsync(
-              token.address
+              affiliate.address
             );
 
             newLicenseBalance.should.be.bignumber.equal(
@@ -862,7 +865,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
           });
           it('should not pay an affiliate', async () => {
             const originalLicenseBalance = await web3Eth.getBalanceAsync(
-              token.address
+              affiliate.address
             );
             const originalAffiliateBalance = await web3Eth.getBalanceAsync(
               affiliate.address
@@ -870,7 +873,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
             await assertOwns(user1, secondProduct.id);
 
             // make a renewal
-            await daiContract.approve(token.address, secondProduct.price, { from: user3 })
+            await daiContract.approve(affiliate.address, secondProduct.price, { from: user3 })
             await token.renew(tokenId, 1, {
               from: user3,
               // value: secondProduct.price,
@@ -878,7 +881,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
             });
 
             const newLicenseBalance = await web3Eth.getBalanceAsync(
-              token.address
+              affiliate.address
             );
 
             newLicenseBalance.should.be.bignumber.equal(
