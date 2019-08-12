@@ -1,6 +1,5 @@
 pragma solidity 0.5.0;
 
-import "./LicenseBase.sol";
 import "./math/SafeMath.sol";
 import "./ownership/Ownable.sol";
 
@@ -8,8 +7,14 @@ import "./ownership/Ownable.sol";
  * @title LicenseInventory
  * @notice LicenseInventory controls the products and inventory for those products
  **/
-contract LicenseInventory is Ownable, LicenseBase {
+contract LicenseInventory is Ownable {
   using SafeMath for uint256;
+
+  address public saleController;
+  function setSaleController(address _saleController) onlyOwner public {
+    saleController = _saleController;
+  }
+
 
   event ProductCreated(
     uint256 id,
@@ -135,9 +140,10 @@ contract LicenseInventory is Ownable, LicenseBase {
     products[_productId].renewable = _isRenewable;
   }
 
-  function _purchaseOneUnitInStock(uint256 _productId) internal {
-    require(_productExists(_productId), "LicenseInventory._purchaseOneUnitInStock(): product does not exist");
-    require(availableInventoryOf(_productId) > 0, "LicenseInventory._purchaseOneUnitInStock(): no available inventory");
+  function purchaseOneUnitInStock(uint256 _productId) public {
+    require(msg.sender == saleController, "LicenseInventory.purchaseOneUnitInStock(): can only be called by the saleController");
+    require(_productExists(_productId), "LicenseInventory.purchaseOneUnitInStock(): product does not exist");
+    require(availableInventoryOf(_productId) > 0, "LicenseInventory.purchaseOneUnitInStock(): no available inventory");
 
     // lower inventory
     _decrementInventory(_productId, 1);
@@ -146,13 +152,13 @@ contract LicenseInventory is Ownable, LicenseBase {
     products[_productId].sold = products[_productId].sold.add(1);
   }
 
-  function _requireRenewableProduct(uint256 _productId) internal view {
+  function requireRenewableProduct(uint256 _productId) public view {
     // productId must exist
-    require(_productId != 0, "LicenseInventory._requireRenewableProduct(): productID must be non-zero");
+    require(_productId != 0, "LicenseInventory.requireRenewableProduct(): productID must be non-zero");
     // You can only renew a subscription product
-    require(isSubscriptionProduct(_productId), "LicenseInventory._requireRenewableProduct(): not a subscription product");
+    require(isSubscriptionProduct(_productId), "LicenseInventory.requireRenewableProduct(): not a subscription product");
     // The product must currently be renewable
-    require(renewableOf(_productId), "LicenseInventory._requireRenewableProduct(): product is not renewable");
+    require(renewableOf(_productId), "LicenseInventory.requireRenewableProduct(): product is not renewable");
   }
 
   /*** public ***/

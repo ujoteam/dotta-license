@@ -1,6 +1,8 @@
 pragma solidity 0.5.0;
 
 import "./LicenseInventory.sol";
+import "./DAITransactor.sol";
+import "./lifecycle/Pausable.sol";
 import "./interfaces/ERC721.sol";
 import "./interfaces/ERC721Metadata.sol";
 import "./interfaces/ERC721Enumerable.sol";
@@ -10,8 +12,13 @@ import "./strings/Strings.sol";
 import "./ownership/Ownable.sol";
 
 
-contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Metadata, ERC721Enumerable {
+contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, ERC721Enumerable {
   using SafeMath for uint256;
+
+  address public saleController;
+  function setSaleController(address _saleController) onlyOwner public {
+    saleController = _saleController;
+  }
 
   // Total amount of tokens
   uint256 private totalTokens;
@@ -335,7 +342,6 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     whenNotPaused
   {
     require(_to != address(0), "LicenseOwnership.safeTransferFrom(): 'to' address must be non-zero");
-    require(_isValidLicense(_tokenId), "LicenseOwnership.safeTransferFrom(): not a valid license");
     transferFrom(_from, _to, _tokenId);
     if (_isContract(_to)) {
       bytes4 tokenReceiverResponse = ERC721Receiver(_to).onERC721Received.gas(50000)(
@@ -369,8 +375,10 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
   * @param _to The address that will own the minted token
   * @param _tokenId uint256 ID of the token to be minted by the msg.sender
   */
-  function _mint(address _to, uint256 _tokenId) internal {
+  function mint(address _to, uint256 _tokenId) public {
+    require(msg.sender == saleController, "only saleController can do that");
     require(_to != address(0), "LicenseOwnership._mint(): 'to' address must be non-zero");
+
     _addToken(_to, _tokenId);
     emit Transfer(address(0x0), _to, _tokenId);
   }
@@ -385,7 +393,6 @@ contract LicenseOwnership is Ownable, LicenseInventory, ERC165, ERC721, ERC721Me
     require(_to != address(0), "LicenseOwnership._clearApprovalAndTransfer(): 'to' address must be non-zero");
     require(_to != ownerOf(_tokenId), "LicenseOwnership._clearApprovalAndTransfer(): 'to' address must not be the token's current owner");
     require(ownerOf(_tokenId) == _from, "LicenseOwnership._clearApprovalAndTransfer(): 'from' address must be the token's current owner");
-    require(_isValidLicense(_tokenId), "LicenseOwnership._clearApprovalAndTransfer(): not a valid license");
 
     _clearApproval(_from, _tokenId);
     _removeToken(_from, _tokenId);

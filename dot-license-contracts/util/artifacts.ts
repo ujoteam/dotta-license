@@ -21,8 +21,8 @@ export class Artifacts {
     this.LicenseSale = artifacts.require('LicenseSale');
     this.LicenseOwnership = artifacts.require('LicenseOwnership');
     this.LicenseInventory = artifacts.require('LicenseInventory');
-    this.LicenseBase = artifacts.require('LicenseBase');
-    this.LicenseAccessControl = artifacts.require('LicenseAccessControl');
+    // this.LicenseBase = artifacts.require('LicenseBase');
+    // this.LicenseAccessControl = artifacts.require('LicenseAccessControl');
     this.ERC721 = artifacts.require('ERC721');
     this.ERC20 = artifacts.require('ERC20');
     this.SafeMath = artifacts.require('SafeMath');

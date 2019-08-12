@@ -27,7 +27,11 @@ chai.should();
 const web3: Web3 = (global as any).web3;
 const web3Eth: any = Bluebird.promisifyAll(web3.eth);
 
-contract.only('AffiliateProgram', (accounts: string[]) => {
+function toDaiWei(x: number) {
+    return new BigNumber(x).mul(new BigNumber(10).pow(18))
+}
+
+contract('AffiliateProgram', (accounts: string[]) => {
   let token: any = null;
   let daiContract: any = null;
   let affiliate: any = null;
@@ -270,14 +274,14 @@ contract.only('AffiliateProgram', (accounts: string[]) => {
     describe('when calculating cuts for an affiliate', async () => {
       const priceTests = [
         {
-          price: web3.toWei(1, 'ether'),
+          price: toDaiWei(1),
           rate: 1000,
-          actual: web3.toWei(0.1, 'ether')
+          actual: toDaiWei(0.1)
         },
         {
-          price: web3.toWei(0.5, 'ether'),
+          price: toDaiWei(0.5),
           rate: 2500,
-          actual: web3.toWei(0.125, 'ether')
+          actual: toDaiWei(0.125)
         },
         {
           price: 1000,

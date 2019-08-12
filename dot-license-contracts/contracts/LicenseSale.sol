@@ -1,14 +1,154 @@
 pragma solidity 0.5.0;
 
 import "./ownership/Ownable.sol";
+import "./lifecycle/Pausable.sol";
 import "./interfaces/IERC20.sol";
+import "./math/SafeMath.sol";
 
 import "./LicenseOwnership.sol";
+import "./LicenseInventory.sol";
 import "./Affiliate/AffiliateProgram.sol";
 import "./DAITransactor.sol";
 
-contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
+contract LicenseSale is Ownable, DAITransactor {
+  using SafeMath for uint256;
+
   AffiliateProgram public affiliateProgram;
+  LicenseInventory public productInventory;
+  LicenseOwnership public licenseOwnership;
+
+  function setInventoryContract(address _productInventory) public onlyOwner {
+    productInventory = LicenseInventory(_productInventory);
+  }
+
+  function setOwnershipContract(address _licenseOwnership) public onlyOwner {
+    licenseOwnership = LicenseOwnership(_licenseOwnership);
+  }
+
+  modifier whenTokenNotPaused {
+    require(licenseOwnership.paused() == false, "token is paused");
+    _;
+  }
+
+  constructor() public {
+    withdrawalAddress = msg.sender;
+  }
+
+
+
+  /**************************************
+   *      LICENSE REGISTRY FUNCTIONS
+   **************************************/
+
+
+  /**
+   * @notice Issued is emitted when a new license is issued
+   */
+  event LicenseIssued(
+    address indexed owner,
+    address indexed purchaser,
+    uint256 licenseId,
+    uint256 productId,
+    uint256 attributes,
+    uint256 issuedTime,
+    uint256 expirationTime,
+    address affiliate
+  );
+
+  event LicenseRenewal(
+    address indexed owner,
+    address indexed purchaser,
+    uint256 licenseId,
+    uint256 productId,
+    uint256 expirationTime
+  );
+
+  struct License {
+    uint256 productId;
+    uint256 attributes;
+    uint256 issuedTime;
+    uint256 expirationTime;
+    address affiliate;
+  }
+
+  /**
+   * @notice All licenses in existence.
+   * @dev The ID of each license is an index in this array.
+   */
+  License[] licenses;
+
+  /** internal **/
+  function _isValidLicense(uint256 _licenseId) internal view returns (bool) {
+    return licenseProductId(_licenseId) != 0;
+  }
+
+  /** anyone **/
+
+  /**
+   * @notice Get a license's productId
+   * @param _licenseId the license id
+   */
+  function licenseProductId(uint256 _licenseId) public view returns (uint256) {
+    return licenses[_licenseId].productId;
+  }
+
+  /**
+   * @notice Get a license's attributes
+   * @param _licenseId the license id
+   */
+  function licenseAttributes(uint256 _licenseId) public view returns (uint256) {
+    return licenses[_licenseId].attributes;
+  }
+
+  /**
+   * @notice Get a license's issueTime
+   * @param _licenseId the license id
+   */
+  function licenseIssuedTime(uint256 _licenseId) public view returns (uint256) {
+    return licenses[_licenseId].issuedTime;
+  }
+
+  /**
+   * @notice Get a license's issueTime
+   * @param _licenseId the license id
+   */
+  function licenseExpirationTime(uint256 _licenseId) public view returns (uint256) {
+    return licenses[_licenseId].expirationTime;
+  }
+
+  /**
+   * @notice Get a the affiliate credited for the sale of this license
+   * @param _licenseId the license id
+   */
+  function licenseAffiliate(uint256 _licenseId) public view returns (address) {
+    return licenses[_licenseId].affiliate;
+  }
+
+  /**
+   * @notice Get a license's info
+   * @param _licenseId the license id
+   */
+  function licenseInfo(uint256 _licenseId)
+    public view returns (uint256, uint256, uint256, uint256, address)
+  {
+    return (
+      licenseProductId(_licenseId),
+      licenseAttributes(_licenseId),
+      licenseIssuedTime(_licenseId),
+      licenseExpirationTime(_licenseId),
+      licenseAffiliate(_licenseId)
+    );
+  }
+
+
+
+
+
+
+
+  /**************************************
+   *   LICENSE SALE/RENEWAL FUNCTIONS
+   **************************************/
 
   /**
    * @notice We credit affiliates for renewals that occur within this time of
@@ -27,7 +167,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     address _affiliate)
     internal returns (uint)
   {
-    _purchaseOneUnitInStock(_productId);
+    productInventory.purchaseOneUnitInStock(_productId);
     return _createLicense(
       _productId,
       _numCycles,
@@ -47,13 +187,13 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     returns (uint)
   {
     // You cannot create a subscription license with zero cycles
-    if (isSubscriptionProduct(_productId)) {
+    if (productInventory.isSubscriptionProduct(_productId)) {
       require(_numCycles != 0);
     }
 
     // Non-subscription products have an expiration time of 0, meaning "no-expiration"
-    uint256 expirationTime = isSubscriptionProduct(_productId) ?
-      now.add(intervalOf(_productId).mul(_numCycles)) : // solium-disable-line security/no-block-members
+    uint256 expirationTime = productInventory.isSubscriptionProduct(_productId) ?
+      now.add(productInventory.intervalOf(_productId).mul(_numCycles)) : // solium-disable-line security/no-block-members
       0;
 
     License memory _license = License({
@@ -65,6 +205,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     });
 
     uint256 newLicenseId = licenses.push(_license) - 1; // solium-disable-line zeppelin/no-arithmetic-operations
+
     emit LicenseIssued(
       _assignee,
       msg.sender,
@@ -74,7 +215,8 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
       _license.issuedTime,
       _license.expirationTime,
       _license.affiliate);
-    _mint(_assignee, newLicenseId);
+
+    licenseOwnership.mint(_assignee, newLicenseId);
     return newLicenseId;
   }
 
@@ -91,7 +233,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
       _licenseId,
       _purchaseAmount);
     if(affiliateCut > 0) {
-      require(affiliateCut < _purchaseAmount);
+      require(affiliateCut < _purchaseAmount, "LicenseSale._handleAffiliate(): affiliateCut < _purchaseAmount");
       affiliateProgram.credit(_affiliate, _licenseId, affiliateCut);
     }
   }
@@ -100,19 +242,19 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     // You cannot renew a non-expiring license
     // ... but in what scenario can this happen?
     // require(licenses[_tokenId].expirationTime != 0);
-    uint256 productId = licenseProductId(_tokenId);
+    uint256 productId = licenses[_tokenId].productId;
 
     // If our expiration is in the future, renewing adds time to that future expiration
     // If our expiration has passed already, then we use `now` as the base.
     uint256 renewalBaseTime = Math.max(now, licenses[_tokenId].expirationTime);
 
     // We assume that the payment has been validated outside of this function
-    uint256 newExpirationTime = renewalBaseTime.add(intervalOf(productId).mul(_numCycles));
+    uint256 newExpirationTime = renewalBaseTime.add(productInventory.intervalOf(productId).mul(_numCycles));
 
     licenses[_tokenId].expirationTime = newExpirationTime;
 
     emit LicenseRenewal(
-      ownerOf(_tokenId),
+      licenseOwnership.ownerOf(_tokenId),
       msg.sender,
       _tokenId,
       productId,
@@ -146,7 +288,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     )
     external
     onlyOwner
-    whenNotPaused
+    whenTokenNotPaused
     returns (uint256)
   {
     return _performPurchase(
@@ -163,10 +305,10 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     )
     external
     onlyOwner
-    whenNotPaused
+    whenTokenNotPaused
   {
-    uint256 productId = licenseProductId(_tokenId);
-    _requireRenewableProduct(productId);
+    uint256 productId = licenses[_tokenId].productId;
+    productInventory.requireRenewableProduct(productId);
 
     return _performRenewal(_tokenId, _numCycles);
   }
@@ -187,8 +329,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     address _affiliate
     )
     external
-    payable
-    whenNotPaused
+    whenTokenNotPaused
     returns (uint256)
   {
     require(address(daiContract) != address(0), "LicenseSale.purchase(): DAI contract address is unset");
@@ -199,15 +340,15 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
 
     // Don't bother dealing with excess payments. Ensure the price paid is
     // accurate. No more, no less.
-    // require(msg.value == costForProductCycles(_productId, _numCycles));
-    uint256 cost = costForProductCycles(_productId, _numCycles);
+    // require(msg.value == productInventory.costForProductCycles(_productId, _numCycles));
+    uint256 cost = productInventory.costForProductCycles(_productId, _numCycles);
     require(daiContract.allowance(msg.sender, address(this)) == cost, "LicenseSale.purchase(): not enough DAI");
     bool ok = daiContract.transferFrom(msg.sender, address(this), cost);
     require(ok, "LicenseSale.purchase(): DAI transfer failed");
 
     // Non-subscription products should send a _numCycle of 1 -- you can't buy a
     // multiple quantity of a non-subscription product with this function
-    if(!isSubscriptionProduct(_productId)) {
+    if(!productInventory.isSubscriptionProduct(_productId)) {
       require(_numCycles == 1);
     }
 
@@ -223,7 +364,7 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
       _affiliate);
 
     if(
-      priceOf(_productId) > 0 &&
+      productInventory.priceOf(_productId) > 0 &&
       _affiliate != address(0) &&
       _affiliateProgramIsActive()
     ) {
@@ -245,16 +386,16 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
     uint256 _numCycles
     )
     external
-    whenNotPaused
+    whenTokenNotPaused
   {
     require(_numCycles != 0);
-    require(ownerOf(_tokenId) != address(0));
+    require(licenseOwnership.ownerOf(_tokenId) != address(0));
 
-    uint256 productId = licenseProductId(_tokenId);
-    _requireRenewableProduct(productId);
+    uint256 productId = licenses[_tokenId].productId;
+    productInventory.requireRenewableProduct(productId);
 
     // Transfer the DAI
-    uint256 renewalCost = costForProductCycles(productId, _numCycles);
+    uint256 renewalCost = productInventory.costForProductCycles(productId, _numCycles);
     require(daiContract.allowance(msg.sender, address(this)) >= renewalCost, "LicenseSale.renew(): not enough DAI");
     bool ok = daiContract.transferFrom(msg.sender, address(this), renewalCost);
     require(ok, "LicenseSale.renew(): DAI transfer failed");
@@ -263,16 +404,43 @@ contract LicenseSale is Ownable, DAITransactor, LicenseOwnership {
 
     if(
       renewalCost > 0 &&
-      licenseAffiliate(_tokenId) != address(0) &&
+      licenses[_tokenId].affiliate != address(0) &&
       _affiliateProgramIsActive() &&
-      licenseIssuedTime(_tokenId).add(renewalsCreditAffiliatesFor) > now
+      licenses[_tokenId].issuedTime.add(renewalsCreditAffiliatesFor) > now
     ) {
       _handleAffiliate(
-        licenseAffiliate(_tokenId),
+        licenses[_tokenId].affiliate,
         productId,
         _tokenId,
         renewalCost);
     }
+  }
+
+
+
+  /**
+   * @notice withdrawal address
+   */
+  address public withdrawalAddress;
+
+  /**
+   * @notice Sets a new withdrawalAddress
+   * @param _newWithdrawalAddress - the address where we'll send the funds
+   */
+  function setWithdrawalAddress(address _newWithdrawalAddress) external onlyOwner {
+    require(_newWithdrawalAddress != address(0), "LicenseSale.setWithdrawalAddress(): new withdrawalAddress must be non-zero");
+    withdrawalAddress = _newWithdrawalAddress;
+  }
+
+  /**
+   * @notice Withdraw the balance to the withdrawalAddress
+   * @dev We set a withdrawal address seperate from the CFO because this allows us to withdraw to a cold wallet.
+   */
+  function withdrawBalance() external onlyOwner {
+    require(withdrawalAddress != address(0), "LicenseSale.withdrawBalance(): withdrawalAddress must be non-zero");
+
+    bool ok = daiContract.transfer(withdrawalAddress, daiContract.balanceOf(address(this)));
+    require(ok, "LicenseSale.withdrawBalance(): DAI transfer failed");
   }
 
 }
