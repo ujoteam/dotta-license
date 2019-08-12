@@ -22,7 +22,7 @@ chai.should();
 
 const web3: Web3 = (global as any).web3;
 
-contract.only('LicenseOwnership (ERC721)', (accounts: string[]) => {
+contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
   let token: any = null;
   let daiContract: any = null;
   let licenseInventory: any = null;

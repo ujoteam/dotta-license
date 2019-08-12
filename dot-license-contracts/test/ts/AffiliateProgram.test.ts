@@ -28,7 +28,7 @@ const web3: Web3 = (global as any).web3;
 const web3Eth: any = Bluebird.promisifyAll(web3.eth);
 
 function toDaiWei(x: number) {
-    return new BigNumber(x).mul(new BigNumber(10).pow(18))
+  return new BigNumber(x).mul(new BigNumber(10).pow(18))
 }
 
 contract('AffiliateProgram', (accounts: string[]) => {
@@ -690,7 +690,7 @@ contract('AffiliateProgram', (accounts: string[]) => {
           await assertOwns(user3, secondProduct.id);
         });
       });
-      describe.only('and the affiliate is unknown', async () => {
+      describe('and the affiliate is unknown', async () => {
         let expectedComission: any;
         beforeEach(async () => {
           await affiliate.setBaselineRate(100, { from: creator });
