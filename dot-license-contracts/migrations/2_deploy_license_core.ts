@@ -13,13 +13,26 @@ const {
   AffiliateProgram
 } = new Artifacts(artifacts);
 
-module.exports = (deployer: any, network: string) => {
-  // const licenseContract = network === 'test' ? LicenseCoreTest : LicenseCore;
+module.exports = function (deployer, network, accounts) {
+  deployer.then(async () => {
+    await deployer.deploy(LicenseSale)
+    await deployer.deploy(LicenseInventory)
+    await deployer.deploy(LicenseOwnership)
+    await deployer.deploy(ERC20)
 
-  // TODO - Do this in tests instead of in migrations
-  // const daiContract = network === 'test' ? ERC20 : ERC20;
-  // deployer.deploy(licenseContract);
-  // deployer.deploy(daiContract);
-  deployer.deploy(LicenseCore)
-  deployer.deploy(LicenseSale)
-};
+    let owner;
+
+    let licenseSaleInstance = await LicenseSale.deployed()
+    let licenseInventoryInstance = await LicenseInventory.deployed()
+    let licenseOwnershipInstance = await LicenseOwnership.deployed()
+    let daiContractInstance = await ERC20.deployed()
+
+    await licenseInventoryInstance.setSaleController(licenseSaleInstance.address, { from: accounts[0] })
+    await licenseSaleInstance.setDAIContract(daiContractInstance.address, { from: accounts[0] })
+    await licenseSaleInstance.setInventoryContract(licenseInventoryInstance.address, { from: accounts[0] })
+    await licenseSaleInstance.setOwnershipContract(licenseOwnershipInstance.address, { from: accounts[0] })
+    await licenseOwnershipInstance.setSaleController(licenseSaleInstance.address, { from: accounts[0] })
+
+    return
+  })
+}
