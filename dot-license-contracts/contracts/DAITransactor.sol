@@ -4,7 +4,7 @@ import "./ownership/Ownable.sol";
 import "./interfaces/IERC20.sol";
 
 contract DAITransactor is Ownable {
-  IERC20 daiContract;
+  IERC20 public daiContract;
 
   function setDAIContract(address _daiContract) public {
     require(msg.sender == owner());

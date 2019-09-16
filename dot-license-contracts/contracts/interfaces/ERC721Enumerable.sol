@@ -7,7 +7,7 @@ import "./ERC721.sol";
  * @dev See https://eips.ethereum.org/EIPS/eip-721
  */
 contract ERC721Enumerable is ERC721 {
-    function totalSupply() public view returns (uint256);
+    uint256 public totalSupply;
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
 
     function tokenByIndex(uint256 index) external view returns (uint256);

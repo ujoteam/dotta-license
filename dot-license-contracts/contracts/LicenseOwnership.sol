@@ -15,13 +15,13 @@ import "./ownership/Ownable.sol";
 contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, ERC721Enumerable {
   using SafeMath for uint256;
 
-  address public saleController;
-  function setSaleController(address _saleController) onlyOwner public {
-    saleController = _saleController;
+  address public controller;
+  function setController(address _controller) onlyOwner public {
+    controller = _controller;
   }
 
   // Total amount of tokens
-  uint256 private totalTokens;
+  uint256 public totalSupply;
 
   // Mapping from token ID to owner
   mapping (uint256 => address) private tokenOwner;
@@ -38,24 +38,15 @@ contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, 
   // Mapping from token ID to index of the owner tokens list
   mapping(uint256 => uint256) private ownedTokensIndex;
 
-  /*** Constants ***/
-  // Configure these for your own deployment
-  string public constant NAME = "Ujo";
-  string public constant SYMBOL = "UJO";
-  string public tokenMetadataBaseURI = "http://localhost";
+  string public name;
+  string public symbol;
+  string public tokenMetadataBaseURI;
 
-  /**
-   * @notice token's name
-   */
-  function name() external view returns (string memory) {
-    return NAME;
-  }
-
-  /**
-   * @notice symbols's name
-   */
-  function symbol() external view returns (string memory) {
-    return SYMBOL;
+  constructor(string memory _name, string memory _symbol, string memory _tokenMetadataBaseURI, uint256 _totalSupply) public {
+    name = _name;
+    symbol = _symbol;
+    tokenMetadataBaseURI = _tokenMetadataBaseURI;
+    totalSupply = _totalSupply;
   }
 
   function implementsERC721() external pure returns (bool) {
@@ -97,24 +88,16 @@ contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, 
   }
 
   /**
-  * @notice Gets the total amount of tokens stored by the contract
-  * @return uint256 representing the total amount of tokens
-  */
-  function totalSupply() public view returns (uint256) {
-    return totalTokens;
-  }
-
-  /**
   * @notice Enumerate valid NFTs
   * @dev Our Licenses are kept in an array and each new License-token is just
   * the next element in the array. This method is required for ERC721Enumerable
   * which may support more complicated storage schemes. However, in our case the
   * _index is the tokenId
-  * @param _index A counter less than `totalSupply()`
+  * @param _index A counter less than `totalSupply`
   * @return The token identifier for the `_index`th NFT
   */
   function tokenByIndex(uint256 _index) external view returns (uint256) {
-    require(_index < totalSupply(), "LicenseOwnership.tokenByIndex(): token index out of range");
+    require(_index < totalSupply, "LicenseOwnership.tokenByIndex(): token index out of range");
     return _index;
   }
 
@@ -203,8 +186,7 @@ contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, 
    * @param _operator operator address which you want to query the approval of
    * @return bool whether the given operator is approved by the given owner
    */
-  function isApprovedForAll(address _owner, address _operator) public view returns (bool)
-  {
+  function isApprovedForAll(address _owner, address _operator) public view returns (bool) {
     return operatorApprovals[_owner][_operator];
   }
 
@@ -370,18 +352,6 @@ contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, 
     safeTransferFrom(_from, _to, _tokenId, "");
   }
 
-  /**
-  * @notice Mint token function
-  * @param _to The address that will own the minted token
-  * @param _tokenId uint256 ID of the token to be minted by the msg.sender
-  */
-  function mint(address _to, uint256 _tokenId) public {
-    require(msg.sender == saleController, "only saleController can do that");
-    require(_to != address(0), "LicenseOwnership._mint(): 'to' address must be non-zero");
-
-    _addToken(_to, _tokenId);
-    emit Transfer(address(0x0), _to, _tokenId);
-  }
 
   /**
   * @notice Internal function to clear current approval and transfer the ownership of a given token ID
@@ -421,7 +391,7 @@ contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, 
     uint256 length = balanceOf(_to);
     ownedTokens[_to].push(_tokenId);
     ownedTokensIndex[_tokenId] = length;
-    totalTokens = totalTokens.add(1);
+    totalSupply = totalSupply.add(1);
   }
 
   /**
@@ -446,12 +416,88 @@ contract LicenseOwnership is Ownable, Pausable, ERC165, ERC721, ERC721Metadata, 
     ownedTokens[_from].length--;
     ownedTokensIndex[_tokenId] = 0;
     ownedTokensIndex[lastToken] = tokenIndex;
-    totalTokens = totalTokens.sub(1);
+    totalSupply = totalSupply.sub(1);
   }
 
   function _isContract(address addr) internal view returns (bool) {
     uint size;
     assembly { size := extcodesize(addr) }
     return size > 0;
+  }
+
+
+
+  struct License {
+    uint256 productId;
+    uint256 issuedTime;
+    uint256 expirationTime;
+  }
+
+  /**
+   * @notice All licenses in existence.
+   * @dev The ID of each license is an index in this array.
+   */
+  License[] licenses;
+
+  /**
+   * @notice Get a license's info
+   * @param _licenseId the license id
+   */
+  function licenseInfo(uint256 _licenseId)
+    public view returns (uint256 productId, uint256 issuedTime, uint256 expirationTime)
+  {
+    License storage license = licenses[_licenseId];
+    return (
+      license.productId,
+      license.issuedTime,
+      license.expirationTime
+    );
+  }
+
+  event LicenseIssued(
+    address indexed owner,
+    address indexed purchaser,
+    uint256 licenseId,
+    uint256 productId,
+    uint256 issuedTime,
+    uint256 expirationTime
+  );
+
+  function createLicense(
+    uint256 _productId,
+    address _assignee,
+    uint256 _expirationTime)
+    public
+    onlyOwner
+    returns (uint)
+  {
+    require(msg.sender == controller || msg.sender == owner(), "LicenseOwnership.createLicense(): forbidden");
+
+    License memory _license = License({
+      productId: _productId,
+      issuedTime: now, // solium-disable-line security/no-block-members
+      expirationTime: _expirationTime
+    });
+
+    uint256 newLicenseId = licenses.push(_license) - 1; // solium-disable-line zeppelin/no-arithmetic-operations
+
+    emit LicenseIssued(
+      _assignee,
+      msg.sender,
+      newLicenseId,
+      _license.productId,
+      _license.issuedTime,
+      _license.expirationTime);
+
+    _addToken(_assignee, newLicenseId);
+    emit Transfer(address(0x0), _assignee, newLicenseId);
+
+    return newLicenseId;
+  }
+
+  function setExpirationTime(uint256 _tokenId, uint256 newExpirationTime) public {
+    require(msg.sender == controller || msg.sender == owner(), "LicenseOwnership.createLicense(): forbidden");
+
+    licenses[_tokenId].expirationTime = newExpirationTime;
   }
 }
