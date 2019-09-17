@@ -14,7 +14,7 @@ import increaseTime from '../helpers/increaseTime';
 
 chaiSetup.configure();
 const expect = chai.expect;
-const { LicenseCoreTest, LicenseSale, LicenseInventory } = new Artifacts(artifacts);
+const { LicenseCoreTest, SaleStore, LicenseInventory } = new Artifacts(artifacts);
 const LicenseCore = LicenseCoreTest;
 
 const { ERC20 } = new Artifacts(artifacts);
@@ -28,7 +28,7 @@ const latestTime = async () => {
   return block.timestamp;
 };
 
-contract('LicenseSale', (accounts: string[]) => {
+contract('SaleStore', (accounts: string[]) => {
   let token: any = null;
   let daiContract: any = null;
   let licenseSale: any = null;
@@ -77,7 +77,7 @@ contract('LicenseSale', (accounts: string[]) => {
     await token.transferOwnership(owner, { from: creator });
 
     // Sale contract
-    licenseSale = await LicenseSale.new({ from: creator })
+    licenseSale = await SaleStore.new({ from: creator })
     await licenseSale.transferOwnership(owner, { from: creator })
     await licenseSale.setDAIContract(daiContract.address, { from: owner })
 

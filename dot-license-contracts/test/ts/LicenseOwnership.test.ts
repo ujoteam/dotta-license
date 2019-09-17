@@ -11,7 +11,7 @@ import { duration } from '../helpers/increaseTime';
 
 chaiSetup.configure();
 const expect = chai.expect;
-const { LicenseCoreTest, LicenseInventory, LicenseSale, AffiliateProgram, MockTokenReceiver } = new Artifacts(
+const { LicenseCoreTest, LicenseInventory, SaleStore, AffiliateProgram, MockTokenReceiver } = new Artifacts(
   artifacts
 );
 const LicenseCore = LicenseCoreTest;
@@ -70,7 +70,7 @@ contract('LicenseOwnership (ERC721)', (accounts: string[]) => {
     await token.transferOwnership(owner, { from: creator });
 
     // Sale contract
-    licenseSale = await LicenseSale.new({ from: creator })
+    licenseSale = await SaleStore.new({ from: creator })
     await licenseSale.transferOwnership(owner, { from: creator })
     await licenseSale.setDAIContract(daiContract.address, { from: owner })
 

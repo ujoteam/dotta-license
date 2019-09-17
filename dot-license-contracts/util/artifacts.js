@@ -3,7 +3,8 @@ class Artifacts {
     this.Migrations = artifacts.require('Migrations');
     this.LicenseCore = artifacts.require('LicenseCore');
     this.LicenseCoreTest = artifacts.require('LicenseCoreTest');
-    this.LicenseSale = artifacts.require('LicenseSale');
+    this.SaleStore = artifacts.require('SaleStore');
+    this.SaleSimple = artifacts.require('SaleSimple');
     this.LicenseOwnership = artifacts.require('LicenseOwnership');
     this.LicenseInventory = artifacts.require('LicenseInventory');
     this.ERC721 = artifacts.require('ERC721');

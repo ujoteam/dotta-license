@@ -2,7 +2,7 @@ const { Artifacts } = require('../util/artifacts')
 const {
   LicenseCore,
   LicenseCoreTest,
-  LicenseSale,
+  SaleStore,
   LicenseOwnership,
   LicenseInventory,
   LicenseBase,
@@ -15,14 +15,14 @@ const {
 
 module.exports = function (deployer, network, accounts) {
   // deployer.then(async () => {
-    // await deployer.deploy(LicenseSale)
+    // await deployer.deploy(SaleStore)
     // await deployer.deploy(LicenseInventory)
     deployer.deploy(LicenseOwnership, "ujo", "UJO", "http://localhost", 10000)
     // deployer.deploy(ERC20)
 
     // let owner;
 
-    // let licenseSaleInstance = await LicenseSale.deployed()
+    // let licenseSaleInstance = await SaleStore.deployed()
     // let licenseInventoryInstance = await LicenseInventory.deployed()
     // let licenseOwnershipInstance = await LicenseOwnership.deployed()
     // let daiContractInstance = await ERC20.deployed()
