@@ -1,10 +1,10 @@
 pragma solidity 0.5.0;
 
-import "../math/SafeMath.sol";
-import "../math/Math.sol";
-import "../lifecycle/Pausable.sol";
-import "../interfaces/IERC20.sol";
-import "../DAITransactor.sol";
+import "./util/SafeMath.sol";
+import "./util/Math.sol";
+import "./util/Pausable.sol";
+import "./util/IERC20.sol";
+import "./DAITransactor.sol";
 
 /**
  * @title AffiliateProrgam

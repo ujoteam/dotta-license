@@ -1,9 +1,9 @@
 pragma solidity 0.5.0;
 
-import "./ownership/Ownable.sol";
-import "./math/SafeMath.sol";
+import "./util/Ownable.sol";
+import "./util/SafeMath.sol";
 
-import "./LicenseOwnership.sol";
+import "./LicenseRegistry.sol";
 import "./DAITransactor.sol";
 
 /**
@@ -15,16 +15,16 @@ contract SaleSimple is Ownable, DAITransactor
 {
     using SafeMath for uint256;
 
-    constructor(address _licenseOwnership, uint256 _daiWeiPrice, uint256 _availableSupply) public {
-        licenseOwnership = LicenseOwnership(_licenseOwnership);
+    constructor(address _licenseRegistry, uint256 _daiWeiPrice, uint256 _availableSupply) public {
+        licenseRegistry = LicenseRegistry(_licenseRegistry);
         daiWeiPrice = _daiWeiPrice;
         availableSupply = _availableSupply;
         withdrawalAddress = msg.sender;
     }
 
-    LicenseOwnership public licenseOwnership;
-    function setOwnershipContract(address _licenseOwnership) public onlyOwner {
-        licenseOwnership = LicenseOwnership(_licenseOwnership);
+    LicenseRegistry public licenseRegistry;
+    function setLicenseRegistryContract(address _licenseRegistry) public onlyOwner {
+        licenseRegistry = LicenseRegistry(_licenseRegistry);
     }
 
     // @notice Single price for all licenses.
@@ -49,7 +49,7 @@ contract SaleSimple is Ownable, DAITransactor
         internal
         returns (uint)
     {
-        uint256 newLicenseId = licenseOwnership.createLicense(0, _assignee, 0);
+        uint256 newLicenseId = licenseRegistry.createLicense(0, _assignee, 0);
         return newLicenseId;
     }
 

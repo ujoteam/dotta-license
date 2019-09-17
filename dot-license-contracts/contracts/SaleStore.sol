@@ -1,29 +1,29 @@
 pragma solidity 0.5.0;
 
-import "./ownership/Ownable.sol";
-import "./lifecycle/Pausable.sol";
-import "./interfaces/IERC20.sol";
-import "./math/SafeMath.sol";
+import "./util/Ownable.sol";
+import "./util/Pausable.sol";
+import "./util/IERC20.sol";
+import "./util/SafeMath.sol";
 
-import "./LicenseOwnership.sol";
-import "./LicenseInventory.sol";
-import "./Affiliate/AffiliateProgram.sol";
+import "./LicenseRegistry.sol";
+import "./Inventory.sol";
+import "./AffiliateProgram.sol";
 import "./DAITransactor.sol";
 
 contract SaleStore is Ownable, DAITransactor
 {
     using SafeMath for uint256;
 
+    Inventory public inventory;
+    LicenseRegistry public licenseRegistry;
     AffiliateProgram public affiliateProgram;
-    LicenseInventory public productInventory;
-    LicenseOwnership public licenseOwnership;
 
-    function setInventoryContract(address _productInventory) public onlyOwner {
-        productInventory = LicenseInventory(_productInventory);
+    function setInventoryContract(address _inventory) public onlyOwner {
+        inventory = Inventory(_inventory);
     }
 
-    function setOwnershipContract(address _licenseOwnership) public onlyOwner {
-        licenseOwnership = LicenseOwnership(_licenseOwnership);
+    function setLicenseRegistryContract(address _licenseRegistry) public onlyOwner {
+        licenseRegistry = LicenseRegistry(_licenseRegistry);
     }
 
     constructor() public {
@@ -45,7 +45,7 @@ contract SaleStore is Ownable, DAITransactor
 
     /** internal **/
     function _performPurchase(uint256 _productId, uint256 _numCycles, address _assignee) internal returns (uint) {
-        productInventory.purchaseOneUnitInStock(_productId);
+        inventory.purchaseOneUnitInStock(_productId);
         return _createLicense(_productId, _numCycles, _assignee);
     }
 
@@ -57,16 +57,16 @@ contract SaleStore is Ownable, DAITransactor
         returns (uint)
     {
         // You cannot create a subscription license with zero cycles
-        if (productInventory.isSubscriptionProduct(_productId)) {
+        if (inventory.isSubscriptionProduct(_productId)) {
             require(_numCycles != 0, "SaleStore._createLicense(): subscription products must have numCycles > 0");
         }
 
         // Non-subscription products have an expiration time of 0, meaning "no-expiration"
-        uint256 expirationTime = productInventory.isSubscriptionProduct(_productId)
-            ? now.add(productInventory.intervalOf(_productId).mul(_numCycles)) // solium-disable-line security/no-block-members
+        uint256 expirationTime = inventory.isSubscriptionProduct(_productId)
+            ? now.add(inventory.intervalOf(_productId).mul(_numCycles)) // solium-disable-line security/no-block-members
             : 0;
 
-        uint256 newLicenseId = licenseOwnership.createLicense(_productId, _assignee, expirationTime);
+        uint256 newLicenseId = licenseRegistry.createLicense(_productId, _assignee, expirationTime);
         return newLicenseId;
     }
 
@@ -85,24 +85,16 @@ contract SaleStore is Ownable, DAITransactor
     }
 
     function _performRenewal(uint256 _licenseId, uint256 _numCycles) internal {
-        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseOwnership.licenseInfo(_licenseId);
+        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
 
         // If our expiration is in the future, renewing adds time to that future expiration
         // If our expiration has passed already, then we use `now` as the base.
         uint256 renewalBaseTime = Math.max(now, expirationTime);
 
         // We assume that the payment has been validated outside of this function
-        uint256 newExpirationTime = renewalBaseTime.add(productInventory.intervalOf(productId).mul(_numCycles));
+        uint256 newExpirationTime = renewalBaseTime.add(inventory.intervalOf(productId).mul(_numCycles));
 
-        licenseOwnership.setExpirationTime(_licenseId, newExpirationTime);
-
-        emit LicenseRenewal(
-            licenseOwnership.ownerOf(_licenseId),
-            msg.sender,
-            _licenseId,
-            productId,
-            newExpirationTime
-        );
+        licenseRegistry.setExpirationTime(_licenseId, newExpirationTime);
     }
 
     function _affiliateProgramIsActive() internal view returns (bool) {
@@ -138,8 +130,8 @@ contract SaleStore is Ownable, DAITransactor
         external
         onlyOwner
     {
-        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseOwnership.licenseInfo(_licenseId);
-        productInventory.requireRenewableProduct(productId);
+        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
+        inventory.requireRenewableProduct(productId);
 
         return _performRenewal(_licenseId, _numCycles);
     }
@@ -165,22 +157,22 @@ contract SaleStore is Ownable, DAITransactor
 
         // Don't bother dealing with excess payments. Ensure the price paid is
         // accurate. No more, no less.
-        // require(msg.value == productInventory.costForProductCycles(_productId, _numCycles));
-        uint256 cost = productInventory.costForProductCycles(_productId, _numCycles);
+        // require(msg.value == inventory.costForProductCycles(_productId, _numCycles));
+        uint256 cost = inventory.costForProductCycles(_productId, _numCycles);
         require(daiContract.allowance(msg.sender, address(this)) == cost, "SaleStore.purchase(): not enough DAI");
         bool ok = daiContract.transferFrom(msg.sender, address(this), cost);
         require(ok, "SaleStore.purchase(): DAI transfer failed");
 
         // Non-subscription products should send a _numCycle of 1 -- you can't buy a
         // multiple quantity of a non-subscription product with this function
-        if(!productInventory.isSubscriptionProduct(_productId)) {
+        if(!inventory.isSubscriptionProduct(_productId)) {
             require(_numCycles == 1);
         }
 
         uint256 licenseId = _performPurchase(_productId, _numCycles, _assignee);
 
         // if(
-        //   productInventory.priceOf(_productId) > 0 &&
+        //   inventory.priceOf(_productId) > 0 &&
         //   _affiliate != address(0) &&
         //   _affiliateProgramIsActive()
         // ) {
@@ -201,13 +193,13 @@ contract SaleStore is Ownable, DAITransactor
         external
     {
         require(_numCycles != 0, "SaleStore.renew(): cannot renew for 0 cycles");
-        require(licenseOwnership.ownerOf(_licenseId) != address(0), "SaleStore.renew(): cannot renew an unowned license");
+        require(licenseRegistry.ownerOf(_licenseId) != address(0), "SaleStore.renew(): cannot renew an unowned license");
 
-        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseOwnership.licenseInfo(_licenseId);
-        productInventory.requireRenewableProduct(productId);
+        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
+        inventory.requireRenewableProduct(productId);
 
         // Transfer the DAI
-        uint256 renewalCost = productInventory.costForProductCycles(productId, _numCycles);
+        uint256 renewalCost = inventory.costForProductCycles(productId, _numCycles);
         require(daiContract.allowance(msg.sender, address(this)) >= renewalCost, "SaleStore.renew(): not enough DAI");
         bool ok = daiContract.transferFrom(msg.sender, address(this), renewalCost);
         require(ok, "SaleStore.renew(): DAI transfer failed");

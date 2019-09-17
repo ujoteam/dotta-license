@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../interfaces/ERC721Receiver.sol";
+import "../util/ERC721Receiver.sol";
 
 contract MockTokenReceiver is ERC721Receiver {
 	function onERC721Received(address /* operator */, address /* _from */, uint256 /* _tokenId */, bytes memory /*data */)

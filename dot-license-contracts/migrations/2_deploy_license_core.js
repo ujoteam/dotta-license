@@ -3,8 +3,8 @@ const {
   LicenseCore,
   LicenseCoreTest,
   SaleStore,
-  LicenseOwnership,
-  LicenseInventory,
+  LicenseRegistry,
+  Inventory,
   LicenseBase,
   LicenseAccessControl,
   ERC721,
@@ -16,22 +16,22 @@ const {
 module.exports = function (deployer, network, accounts) {
   // deployer.then(async () => {
     // await deployer.deploy(SaleStore)
-    // await deployer.deploy(LicenseInventory)
-    deployer.deploy(LicenseOwnership, "ujo", "UJO", "http://localhost", 10000)
+    // await deployer.deploy(Inventory)
+    deployer.deploy(LicenseRegistry, "ujo", "UJO", "http://localhost", 10000)
     // deployer.deploy(ERC20)
 
     // let owner;
 
     // let licenseSaleInstance = await SaleStore.deployed()
-    // let licenseInventoryInstance = await LicenseInventory.deployed()
-    // let licenseOwnershipInstance = await LicenseOwnership.deployed()
+    // let licenseInventoryInstance = await Inventory.deployed()
+    // let licenseRegistryInstance = await LicenseRegistry.deployed()
     // let daiContractInstance = await ERC20.deployed()
 
     // await licenseInventoryInstance.setSaleController(licenseSaleInstance.address, { from: accounts[0] })
     // await licenseSaleInstance.setDAIContract(daiContractInstance.address, { from: accounts[0] })
     // await licenseSaleInstance.setInventoryContract(licenseInventoryInstance.address, { from: accounts[0] })
-    // await licenseSaleInstance.setOwnershipContract(licenseOwnershipInstance.address, { from: accounts[0] })
-    // await licenseOwnershipInstance.setSaleController(licenseSaleInstance.address, { from: accounts[0] })
+    // await licenseSaleInstance.setLicenseRegistryContract(licenseRegistryInstance.address, { from: accounts[0] })
+    // await licenseRegistryInstance.setSaleController(licenseSaleInstance.address, { from: accounts[0] })
 
   // })
 }

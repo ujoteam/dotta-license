@@ -1,13 +1,14 @@
 pragma solidity 0.5.0;
 
-import "./ownership/Ownable.sol";
-import "./interfaces/IERC20.sol";
+import "./util/Ownable.sol";
+import "./util/IERC20.sol";
 
-contract DAITransactor is Ownable {
-  IERC20 public daiContract;
+contract DAITransactor is Ownable
+{
+    IERC20 public daiContract;
 
-  function setDAIContract(address _daiContract) public {
-    require(msg.sender == owner());
-    daiContract = IERC20(_daiContract);
-  }
+    function setDAIContract(address _daiContract) public {
+        require(msg.sender == owner());
+        daiContract = IERC20(_daiContract);
+    }
 }
