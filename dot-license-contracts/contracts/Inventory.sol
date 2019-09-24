@@ -55,16 +55,31 @@ contract Inventory is Ownable
     /*** internal ***/
 
     /**
-     * @notice _productExists checks to see if a product exists
+     * @notice Checks to see if a product exists
+     * @param _productId uint256 ID representing the product
+     * @return bool representing the existence of the product
      */
     function _productExists(uint256 _productId) internal view returns (bool) {
         return products[_productId].id != 0;
     }
 
+    /**
+     * @notice Checks to see if a product does not exists
+     * @param _productId uint256 ID representing the product
+     * @return bool representing the non-existence of the product
+     */
     function _productDoesNotExist(uint256 _productId) internal view returns (bool) {
         return products[_productId].id == 0;
     }
 
+    /**
+     * @notice Creates a product in the list of products
+     * @param _productId uint256 ID representing the product (cannot be changed)
+     * @param _initialPrice uint256 the starting price in DAI (price can be changed)
+     * @param _initialInventoryQuantity uint256 of the initial inventory (inventory can be changed)
+     * @param _supplyCap uint256 representing total supply cap - use `0` for "unlimited" (cannot be changed)
+     * @param _interval uint256 representing the interval ????
+     */
     function _createProduct(
         uint256 _productId,
         uint256 _initialPrice,
@@ -99,6 +114,11 @@ contract Inventory is Ownable
         );
     }
 
+    /**
+     * @notice Increase the inventory of a product with a supply cap > 0.
+     * @param _productId uint256 ID representing the product
+     * @param _inventoryAdjustment uint256 the amount to increase the product inventory
+     */
     function _incrementInventory(
         uint256 _productId,
         uint256 _inventoryAdjustment)
@@ -116,6 +136,11 @@ contract Inventory is Ownable
         products[_productId].available = newInventoryLevel;
     }
 
+    /**
+     * @notice Decrease the inventory of a product with a supply cap > 0.
+     * @param _productId uint256 ID representing the product
+     * @param _inventoryAdjustment uint256 the amount to decrease the product inventory
+     */
     function _decrementInventory(
         uint256 _productId,
         uint256 _inventoryAdjustment)
@@ -128,21 +153,39 @@ contract Inventory is Ownable
         products[_productId].available = newInventoryLevel;
     }
 
+    /**
+     * @notice Remove additional inventory of a product.
+     * @param _productId uint256 ID representing the product
+     */
     function _clearInventory(uint256 _productId) internal {
         require(_productExists(_productId), "Inventory._clearInventory(): product does not exist");
         products[_productId].available = 0;
     }
 
+    /**
+     * @notice Update the price of a product.
+     * @param _productId uint256 ID representing the product
+     * @param _price uint256 the updated price in DAI
+     */
     function _setPrice(uint256 _productId, uint256 _price) internal {
         require(_productExists(_productId), "Inventory._setPrice(): product does not exist");
         products[_productId].price = _price;
     }
 
+    /**
+     * @notice Update the product to require or disable subscription functionality.
+     * @param _productId uint256 ID representing the product
+     * @param _isRenewable bool of renewability
+     */
     function _setRenewable(uint256 _productId, bool _isRenewable) internal {
         require(_productExists(_productId), "Inventory._setRenewable(): product does not exist");
         products[_productId].renewable = _isRenewable;
     }
 
+    /**
+     * @notice Enables msg.sender to purchase one item of product.
+     * @param _productId uint256 ID representing the product
+     */
     function purchaseOneUnitInStock(uint256 _productId) public {
         require(msg.sender == controller, "Inventory.purchaseOneUnitInStock(): can only be called by the controller");
         require(_productExists(_productId), "Inventory.purchaseOneUnitInStock(): product does not exist");
@@ -155,6 +198,10 @@ contract Inventory is Ownable
         products[_productId].sold = products[_productId].sold.add(1);
     }
 
+    /**
+     * @notice Enables msg.sender to purchase one item of product.
+     * @param _productId uint256 ID representing the product
+     */
     function requireRenewableProduct(uint256 _productId) public view {
         // productId must exist
         require(_productId != 0, "Inventory.requireRenewableProduct(): productID must be non-zero");
@@ -170,10 +217,10 @@ contract Inventory is Ownable
 
     /**
      * @notice createProduct creates a new product in the system
-     * @param _productId - the id of the product to use (cannot be changed)
-     * @param _initialPrice - the starting price (price can be changed)
-     * @param _initialInventoryQuantity - the initial inventory (inventory can be changed)
-     * @param _supplyCap - the total supplyCap - use `0` for "unlimited" (cannot be changed)
+     * @param _productId uint256 ID representing the product (cannot be changed)
+     * @param _initialPrice uint256 the starting price in DAI (price can be changed)
+     * @param _initialInventoryQuantity uint256 of the initial inventory (inventory can be changed)
+     * @param _supplyCap uint256 representing total supply cap - use `0` for "unlimited" (cannot be changed)
      */
     function createProduct(
         uint256 _productId,
@@ -193,9 +240,9 @@ contract Inventory is Ownable
     }
 
     /**
-     * @notice incrementInventory - increments the inventory of a product
-     * @param _productId - the product id
-     * @param _inventoryAdjustment - the amount to increment
+     * @notice Increases the inventory of a product
+     * @param _productId uint256 ID representing the product
+     * @param _inventoryAdjustment uint256 the amount to increment
      */
     function incrementInventory(
         uint256 _productId,
@@ -208,8 +255,8 @@ contract Inventory is Ownable
     }
 
     /**
-     * @notice decrementInventory removes inventory levels for a product
-     * @param _productId - the product id
+     * @notice Decreases inventory levels for a product
+     * @param _productId uint256 ID representing the product
      * @param _inventoryAdjustment - the amount to decrement
      */
     function decrementInventory(
@@ -242,9 +289,9 @@ contract Inventory is Ownable
     }
 
     /**
-     * @notice setPrice - sets the price of a product
-     * @param _productId - the product id
-     * @param _price - the product price
+     * @notice Update the price of a product.
+     * @param _productId uint256 ID representing the product
+     * @param _price uint256 the updated price in DAI
      */
     function setPrice(uint256 _productId, uint256 _price)
         external
@@ -255,9 +302,9 @@ contract Inventory is Ownable
     }
 
     /**
-     * @notice setRenewable - sets if a product is renewable
-     * @param _productId - the product id
-     * @param _newRenewable - the new renewable setting
+     * @notice Update the product to require or disable subscription functionality.
+     * @param _productId uint256 ID representing the product
+     * @param _isRenewable bool of renewability
      */
     function setRenewable(uint256 _productId, bool _newRenewable)
         external
@@ -270,8 +317,9 @@ contract Inventory is Ownable
     /** anyone **/
 
     /**
-     * @notice The price of a product
-     * @param _productId - the product id
+     * @notice Reads the price of a product
+     * @param _productId uint256 ID representing the product
+     * @return uint256 representing the price
      */
     function priceOf(uint256 _productId) public view returns (uint256) {
         return products[_productId].price;
@@ -279,7 +327,8 @@ contract Inventory is Ownable
 
     /**
      * @notice The available inventory of a product
-     * @param _productId - the product id
+     * @param _productId uint256 ID representing the product
+     * @return uint256 representing the amount of product available to purchase
      */
     function availableInventoryOf(uint256 _productId) public view returns (uint256) {
         return products[_productId].available;
@@ -287,7 +336,8 @@ contract Inventory is Ownable
 
     /**
      * @notice The total supplyCap of a product
-     * @param _productId - the product id
+     * @param _productId uint256 ID representing the product
+     * @return uint256 representing the total amount over the lifetime of the product
      */
     function totalSupplyOf(uint256 _productId) public view returns (uint256) {
         return products[_productId].supplyCap;
@@ -295,7 +345,8 @@ contract Inventory is Ownable
 
     /**
      * @notice The total sold of a product
-     * @param _productId - the product id
+     * @param _productId uint256 ID representing the product
+     * @return uint256 representing the total amount of product sold
      */
     function totalSold(uint256 _productId) public view returns (uint256) {
         return products[_productId].sold;
@@ -303,7 +354,8 @@ contract Inventory is Ownable
 
     /**
      * @notice The renewal interval of a product in seconds
-     * @param _productId - the product id
+     * @param _productId uint256 ID representing the product
+     * @return uint256 representing the subscription length of the product
      */
     function intervalOf(uint256 _productId) public view returns (uint256) {
         return products[_productId].interval;
@@ -311,7 +363,8 @@ contract Inventory is Ownable
 
     /**
      * @notice Is this product renewable?
-     * @param _productId - the product id
+     * @param _productId uint256 ID representing the product
+     * @return bool which returns whether the product currently requires a subscription
      */
     function renewableOf(uint256 _productId) public view returns (bool) {
         return products[_productId].renewable;
@@ -320,7 +373,8 @@ contract Inventory is Ownable
 
     /**
      * @notice The product info for a product
-     * @param _productId - the product id
+     * @param _productId uint256 ID representing the product
+     * @return struct containing all the product properties as defined in createProduct
      */
     function productInfo(uint256 _productId)
         public
@@ -337,6 +391,7 @@ contract Inventory is Ownable
 
     /**
      * @notice Get all product ids
+     * @return uint256[] containing all the productIds
      */
     function getAllProductIds() public view returns (uint256[] memory) {
         return allProductIds;
