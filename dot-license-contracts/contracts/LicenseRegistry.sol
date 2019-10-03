@@ -53,14 +53,14 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
         return true;
     }
 
-    function tokenURI(uint256 _tokenId)
+    function tokenURI(uint256 _licenseId)
         external
         view
         returns (string memory infoUrl)
     {
         return Strings.strConcat(
             tokenMetadataBaseURI,
-            Strings.uint2str(_tokenId));
+            Strings.uint2str(licenses[_licenseId].productId));
     }
 
     function supportsInterface(
