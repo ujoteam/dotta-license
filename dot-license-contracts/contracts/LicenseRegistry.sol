@@ -470,9 +470,9 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
         return newLicenseId;
     }
 
-    function setExpirationTime(uint256 _tokenId, uint256 newExpirationTime) public {
+    function setExpirationTime(uint256 _licenseId, uint256 newExpirationTime) public {
         require(msg.sender == controller || msg.sender == owner(), "LicenseRegistry.createLicense(): forbidden");
 
-        licenses[_tokenId].expirationTime = newExpirationTime;
+        licenses[_licenseId].expirationTime = newExpirationTime;
     }
 }

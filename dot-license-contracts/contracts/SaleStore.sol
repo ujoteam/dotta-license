@@ -85,7 +85,7 @@ contract SaleStore is Ownable, DAITransactor
     }
 
     function _performRenewal(uint256 _licenseId, uint256 _numCycles) internal {
-        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
+        (uint256 productId, , uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
 
         // If our expiration is in the future, renewing adds time to that future expiration
         // If our expiration has passed already, then we use `now` as the base.
@@ -115,7 +115,7 @@ contract SaleStore is Ownable, DAITransactor
         renewalsCreditAffiliatesFor = _newTime;
     }
 
-    function createPromotionalPurchase(uint256 _productId, uint256 _numCycles, address _assignee, uint256 _attributes)
+    function createPromotionalPurchase(uint256 _productId, uint256 _numCycles, address _assignee)
         external
         onlyOwner
         returns (uint256)
@@ -130,7 +130,7 @@ contract SaleStore is Ownable, DAITransactor
         external
         onlyOwner
     {
-        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
+        (uint256 productId, , ) = licenseRegistry.licenseInfo(_licenseId);
         inventory.requireRenewableProduct(productId);
 
         return _performRenewal(_licenseId, _numCycles);
@@ -143,9 +143,8 @@ contract SaleStore is Ownable, DAITransactor
      * @param _productId - the product to purchase
      * @param _numCycles - the number of cycles being purchased. This number should be `1` for non-subscription products and the number of cycles for subscriptions.
      * @param _assignee - the address to assign the purchase to (doesn't have to be msg.sender)
-     * @param _affiliate - the address to of the affiliate - use address(0) if none
      */
-    function purchase(uint256 _productId, uint256 _numCycles, address _assignee, address _affiliate)
+    function purchase(uint256 _productId, uint256 _numCycles, address _assignee)
         external
         returns (uint256)
     {
@@ -195,7 +194,7 @@ contract SaleStore is Ownable, DAITransactor
         require(_numCycles != 0, "SaleStore.renew(): cannot renew for 0 cycles");
         require(licenseRegistry.ownerOf(_licenseId) != address(0), "SaleStore.renew(): cannot renew an unowned license");
 
-        (uint256 productId, uint256 issuedTime, uint256 expirationTime) = licenseRegistry.licenseInfo(_licenseId);
+        (uint256 productId, , ) = licenseRegistry.licenseInfo(_licenseId);
         inventory.requireRenewableProduct(productId);
 
         // Transfer the DAI
