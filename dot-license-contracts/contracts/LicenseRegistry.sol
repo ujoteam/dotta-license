@@ -10,7 +10,14 @@ import "./util/Strings.sol";
 import "./util/Ownable.sol";
 import "./util/SafeMath.sol";
 
-
+/**
+ * @title LicenseRegistry
+ * @notice LicenseRegistry storage contract built for managing NFTs as licenses for products or services.
+ *     Much of the logic regarding ownership, approval, and transferability should bear familiarity
+ *     to other ERC721 implementations while the addition functionality of operators enables other
+ *     addresses to act on behalf of owners. When paired with inventory solutions, these contracts
+ *     stand as foundational elements for sales and management of licensible material.
+ **/
 contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enumerable
 {
     using SafeMath for uint256;
@@ -102,9 +109,9 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Gets the balance of the specified address
+     * @notice Gets the total token count of the specified address
      * @param _owner address to query the balance of
-     * @return uint256 representing the amount owned by the passed address
+     * @return uint256 representing the amount of tokens owned by the passed address
      */
     function balanceOf(address _owner) public view returns (uint256) {
         require(_owner != address(0), "LicenseRegistry.balanceOf(): owner must be non-zero");
@@ -114,9 +121,10 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     /**
      * @notice Gets the list of tokens owned by a given address
      * @param _owner address to query the tokens of
-     * @return uint256[] representing the list of tokens owned by the passed address
+     * @return uint256[] representing the list of tokenIds owned by the passed address
      */
     function tokensOf(address _owner) public view returns (uint256[] memory) {
+        require(_owner != address(0), "LicenseRegistry.balanceOf(): owner must be non-zero");
         return ownedTokens[_owner];
     }
 
@@ -133,6 +141,7 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
         view
         returns (uint256 _tokenId)
     {
+        require(_owner != address(0), "LicenseRegistry.balanceOf(): owner must be non-zero");
         require(_index < balanceOf(_owner), "LicenseRegistry.tokenOfOwnerByIndex(): token index out of range");
         return ownedTokens[_owner][_index];
     }
@@ -149,7 +158,7 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Gets the approved address to take ownership of a given token ID
+     * @notice Gets the address approved to take ownership of a given token ID
      * @param _tokenId uint256 ID of the token to query the approval of
      * @return address currently approved to take ownership of the given token ID
      */
@@ -171,10 +180,10 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Tells whether the msg.sender is approved for the given token ID or not
+     * @notice Tells whether the _asker is approved for the given token ID or not
      * @param _asker address of asking for approval
      * @param _tokenId uint256 ID of the token to query the approval of
-     * @return bool whether the msg.sender is approved for the given token ID or not
+     * @return bool whether the requested address is approved for the given token ID or not
      */
     function isSpecificallyApprovedFor(address _asker, uint256 _tokenId) internal view returns (bool) {
         return getApproved(_tokenId) == _asker;
@@ -203,7 +212,7 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Approves another address to claim for the ownership of the given token ID
+     * @notice Approves another address to claim the ownership of the given token ID
      * @param _to address to be approved for the given token ID
      * @param _tokenId uint256 ID of the token to be approved
      */
@@ -249,8 +258,8 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Removes approval for another address to claim for the ownership of any
-     *  tokens owned by this account.
+     * @notice Removes the blanket approval for another address to claim for the ownership of any
+     *  tokens owned by this account. Specific approval for tokenIds will remain active.
      * @dev Note that this only removes the operator approval and
      *  does not clear any independent, specific approvals of token transfers to this address
      * @param _to address to be disapproved for the given token ID
@@ -348,6 +357,7 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
 
     /**
      * @notice Internal function to clear current approval of a given token ID
+     * @param _owner address representing the owner of the token to be transferred
      * @param _tokenId uint256 ID of the token to be transferred
      */
     function _clearApproval(address _owner, uint256 _tokenId) private {
@@ -357,9 +367,9 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Internal function to add a token ID to the list of a given address
+     * @notice Internal function to add a tokenId to the list of tokenIds owned by a given address
      * @param _to address representing the new owner of the given token ID
-     * @param _tokenId uint256 ID of the token to be added to the tokens list of the given address
+     * @param _tokenId uint256 ID of the token to be added to the list
      */
     function _addToken(address _to, uint256 _tokenId) private {
         require(tokenOwner[_tokenId] == address(0), "LicenseRegistry._addToken(): token ID already exists");
@@ -371,7 +381,7 @@ contract LicenseRegistry is Ownable, ERC165, ERC721, ERC721Metadata, ERC721Enume
     }
 
     /**
-     * @notice Internal function to remove a token ID from the list of a given address
+     * @notice Internal function to remove a token ID from the list tokenIds owned by a given address
      * @param _from address representing the previous owner of the given token ID
      * @param _tokenId uint256 ID of the token to be removed from the tokens list of the given address
      */
